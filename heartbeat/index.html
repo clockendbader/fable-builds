@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One heartbeat</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="beat-dot" id="beatDot" aria-hidden="true"></span>
+      <h1 data-t="title"></h1>
+      <span class="sub" data-t="subtitle"></span>
+    </div>
+    <nav class="conds" id="conds" aria-label="Condition"></nav>
+    <div class="top-actions">
+      <button class="btn ghost" id="btnSimplify" data-t="simplifies"></button>
+      <button class="btn lang" id="btnLang" aria-label="Switch language"></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage" id="stage">
+      <canvas id="gl" aria-label="3D heart"></canvas>
+      <div id="labels" aria-hidden="true"></div>
+
+      <div class="tools">
+        <div class="seg" id="viewSeg" role="group"></div>
+        <div class="seg toggles" id="layerSeg" role="group"></div>
+        <label class="cut" id="cutWrap" hidden>
+          <span data-t="cutDepth"></span>
+          <input type="range" id="cutZ" min="0" max="100" value="58" dir="ltr">
+        </label>
+        <div class="hint" id="hint" data-t="hintView"></div>
+      </div>
+
+      <aside class="card info" id="info" hidden>
+        <button class="x" id="infoClose" aria-label="Close">×</button>
+        <h2 id="infoName"></h2>
+        <p id="infoText"></p>
+      </aside>
+
+      <div class="card legend" id="legend">
+        <div class="dots">
+          <span><i class="dot oxy"></i><span data-t="blood.oxy"></span></span>
+          <span><i class="dot deoxy"></i><span data-t="blood.deoxy"></span></span>
+        </div>
+        <p class="note" data-t="blood.note"></p>
+        <p class="route" data-t="blood.route"></p>
+      </div>
+
+      <div class="card cond-card" id="condCard" hidden></div>
+
+      <div id="loading">
+        <div class="load-box">
+          <div class="load-heart" aria-hidden="true"></div>
+          <p data-t="loading"></p>
+          <div class="bar"><i id="loadBar"></i></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="phase-card" id="phaseCard">
+        <span class="phase-count" id="phaseCount"></span>
+        <h2 id="phaseName"></h2>
+        <p id="phaseText"></p>
+        <div class="ribbon" id="ribbon"></div>
+        <div class="chips" id="valveChips"></div>
+      </div>
+
+      <div class="signal" id="signal">
+        <div class="chain" id="chain"></div>
+        <p class="signal-note" id="signalNote"></p>
+      </div>
+
+      <div class="chart-wrap"><canvas id="chart" aria-label="ECG, pressure and volume chart"></canvas></div>
+      <p class="chart-key" id="chartKey"></p>
+
+      <div class="vitals" id="vitals"></div>
+    </section>
+  </main>
+
+  <footer class="transport">
+    <div class="group play">
+      <button class="btn primary" id="btnPlay"></button>
+      <button class="btn" id="btnStep"></button>
+    </div>
+    <div class="group">
+      <span class="lab" data-t="speed"></span>
+      <div class="seg" id="speedSeg" role="group" dir="ltr"></div>
+    </div>
+    <div class="group rate">
+      <span class="lab" id="rateLabel"></span>
+      <input type="range" id="rate" min="40" max="180" step="1" value="75" dir="ltr">
+      <output id="rateOut" dir="ltr"></output>
+    </div>
+    <div class="group timing" id="timing"></div>
+    <div class="group">
+      <button class="btn" id="btnSound"></button>
+    </div>
+  </footer>
+
+  <div class="disclaimer"><span data-t="disclaimer"></span> <span class="keys" data-t="keys"></span></div>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg-head"><h2 data-t="simplifies"></h2><button class="x" id="dlgClose" aria-label="Close">×</button></div>
+  <div class="dlg-body" id="dlgBody"></div>
+</dialog>
+
+<script src="js/i18n.js"></script>
+<script src="js/physio.js"></script>
+<script src="js/geometry.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/blood.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

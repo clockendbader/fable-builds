@@ -1,0 +1,1861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Passage</title>
+<style>:root{--bg:#05070a;--ink:#e8edf2;--dim:#8d9aa8;--line:rgba(190,210,230,.16);--panel:rgba(10,14,19,.78);--host:#2a78c2;--trav:#f0a61c;--warn:#cc3305;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+canvas#c{position:fixed;inset:0;display:block;touch-action:none;outline:none}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+button:hover:not(:disabled){border-color:rgba(190,210,230,.4);background:rgba(190,210,230,.06)}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible{outline:2px solid #9fd0ff;outline-offset:2px}
+button.on{background:rgba(159,208,255,.16);border-color:rgba(159,208,255,.6)}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(0,0,0,.6) 100%)}
+/* audio */
+#audio{position:fixed;top:10px;right:12px;z-index:30;display:flex;gap:6px}
+#audio button{font-size:12px;padding:5px 9px;color:var(--dim);background:var(--panel)}
+#audio button.off{text-decoration:line-through;opacity:.7}
+/* screens */
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;overflow:auto}
+#title{justify-content:flex-end;padding:0 20px 9vh;text-align:center;background:linear-gradient(to top,rgba(5,7,10,.92) 0%,rgba(5,7,10,.5) 38%,transparent 62%)}
+#title h1{font-family:var(--serif);font-weight:400;font-size:clamp(52px,11vw,120px);letter-spacing:.2em;margin:0 0 0 .2em;line-height:1}
+#title p{font-family:var(--serif);font-style:italic;color:var(--dim);font-size:clamp(15px,2.2vw,20px);margin:14px 0 28px}
+.menu{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.menu button{padding:12px 22px;font-size:16px;background:var(--panel)}
+.primary{background:rgba(240,166,28,.16)!important;border-color:rgba(240,166,28,.7)!important}
+#select{background:rgba(5,7,10,.93);align-items:stretch;padding:18px clamp(14px,4vw,56px) 60px}
+.selTop{display:flex;align-items:center;gap:14px;margin:36px 0 8px}
+.selTop h2{font-family:var(--serif);font-weight:400;font-size:30px;letter-spacing:.08em;margin:0}
+.room{border-top:1px solid var(--line);padding:16px 0 6px}
+.roomHead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.rn{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.rt{font-family:var(--serif);font-size:21px}
+.lock{font-size:12px;color:var(--dim);font-style:italic}
+.link{border:none;padding:2px 4px;color:#9fd0ff;font-size:12px;text-decoration:underline}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 8px 10px;background:rgba(190,210,230,.03);text-align:center;white-space:normal;min-height:150px}
+.tile svg{width:64px;height:64px;color:#b9cbe0;margin-bottom:4px}
+.tile .tn{font-size:13px;line-height:1.25;overflow-wrap:anywhere;hyphens:auto;max-width:100%}
+.tile .tt{font-size:13px;color:var(--trav);letter-spacing:.08em;margin-top:auto}
+.tile .ts{font-size:11px;color:var(--dim)}
+.tile.special .tt{color:#e9b9a6;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+.tile.locked{opacity:.3}
+.room.closed .rt{color:var(--dim)}
+.rand{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0 4px;font-size:14px;color:var(--dim)}
+.rand input{accent-color:var(--trav)}
+#note{justify-content:center;background:rgba(5,7,10,.9);padding:24px;text-align:center}
+#note .box{max-width:560px}
+#noteNum{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+#noteTitle{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5vw,44px);margin:10px 0 18px}
+#noteText{font-family:var(--serif);font-size:clamp(17px,2.3vw,20px);line-height:1.6;color:#cfd8e1;margin:0 0 30px}
+/* play */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud>*{pointer-events:auto}
+#hud.dim .bottom,#hud.dim #prompt{opacity:0;pointer-events:none}
+.top{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:linear-gradient(rgba(5,7,10,.85),transparent);pointer-events:none!important}
+.top>*{pointer-events:auto}
+#bBack{background:var(--panel);font-size:13px}
+.ttl{flex:1;min-width:0}
+#lvChapter{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#lvName{font-family:var(--serif);font-size:clamp(19px,3vw,26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score{text-align:right;margin-right:172px;max-width:46vw}
+#stars{color:var(--trav);font-size:19px;letter-spacing:.14em;min-height:22px}
+#scoreLine{font-size:12.5px;color:#b8c4d0}
+#scoreLine.flag{color:#f0c0ac;letter-spacing:.06em;font-size:11.5px}
+#prompt{position:absolute;top:92px;left:50%;transform:translateX(-50%);width:min(620px,92vw);text-align:center;font-family:var(--serif);font-size:clamp(15px,2.1vw,18px);line-height:1.45;color:#dfe7ee;text-shadow:0 1px 10px #000,0 0 3px #000;opacity:0;transition:opacity .6s;pointer-events:none!important}
+#prompt.show{opacity:1}
+.bottom{position:absolute;left:0;right:0;bottom:0;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(5,7,10,.88) 26%);display:flex;flex-direction:column;gap:7px;transition:opacity .4s}
+.statusRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;text-align:center}
+#status{font-size:13.5px;color:#f1c7b6;text-shadow:0 1px 5px #000,0 0 2px #000}
+#status.ok{color:#bfe6c9}
+#readout{font-size:12px;color:#aab6c2;text-shadow:0 1px 5px #000;width:100%;min-height:15px;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:99px;font-size:12px;background:var(--panel)}
+span.chip{border:1px solid var(--line);color:var(--dim)}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.sw.h{background:var(--host)}.sw.t{background:var(--trav)}
+.sw.o{background:repeating-linear-gradient(45deg,#cc3305 0 3px,#fff2d6 3px 6px)}
+.bar{display:flex;gap:6px;align-items:center;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.bar::-webkit-scrollbar{display:none}
+.bar button{font-size:13px;padding:8px 11px;background:var(--panel);flex:none}
+.bar .sep{flex:none;width:1px;height:22px;background:var(--line);margin:0 2px}
+.bar .grow{flex:1}
+#tools{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+#tools button{font-size:12px;padding:6px 10px;background:var(--panel)}
+#growBox{display:flex;gap:6px;align-items:center;flex:none}
+#growVal{font-size:13px;min-width:112px;text-align:center;font-variant-numeric:tabular-nums}
+#bPass{flex:none;font-size:15px;padding:10px 20px;border-radius:10px;background:var(--panel)}
+#bPass.lit{background:var(--trav);color:#201400;border-color:#ffd98a;font-weight:600;box-shadow:0 0 24px rgba(240,166,28,.55);animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 38px rgba(240,166,28,.9)}}
+#card{position:fixed;z-index:25;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(560px,94vw);max-height:60vh;overflow:auto;background:rgba(9,13,18,.93);border:1px solid var(--line);border-radius:14px;padding:16px 20px;text-align:center;backdrop-filter:blur(6px)}
+#cardTitle{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 6px}
+#cardBody p{margin:5px 0;line-height:1.45;color:#cfd8e1;font-size:14.5px}
+#cardBody .big{font-size:28px;color:var(--trav);letter-spacing:.2em;margin:4px 0 2px}
+#cardBody .small{font-size:13px;color:var(--dim)}
+#cardBody pre{text-align:left;font-size:10.5px;white-space:pre-wrap;word-break:break-all;background:rgba(190,210,230,.06);padding:10px;border-radius:8px;overflow:auto;color:#cfe0f0}
+#card .menu{margin-top:12px}
+#fatal{position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;padding:30px;text-align:center;font-family:var(--serif);font-size:19px;line-height:1.5;background:var(--bg)}
+@media (max-width:640px){
+  .bar{flex-wrap:wrap;justify-content:center;overflow:visible}
+  .bar .sep,.bar .grow{display:none}
+  .bar button{padding:7px 9px;font-size:12px}
+  #bPass{order:-2;flex:1 1 100%;font-size:15px;padding:11px}
+  #growBox{order:-1;flex:1 1 100%;justify-content:center}
+  #tools button{padding:5px 8px}
+  #audio button{font-size:11px;padding:4px 7px}
+  .score{margin-right:0;margin-top:30px;max-width:44vw}
+  #scoreLine{font-size:11px}
+  #prompt{top:104px}
+  .tile{min-height:136px}
+}
+@media (prefers-reduced-motion:reduce){#bPass.lit{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="The room: two shapes over a light table"></canvas>
+<div class="vignette"></div>
+<div id="fatal" class="hidden">Passage could not load its 3D library.<br>Check your internet connection and open the file again.</div>
+
+<div id="audio"><button id="bSound">Sound on</button><button id="bMusic">Music on</button></div>
+
+<div id="title" class="screen">
+  <h1>PASSAGE</h1>
+  <p>A shape, its twin, and a way through.</p>
+  <div class="menu"><button id="bBegin" class="primary">Begin</button><button id="bRooms">Rooms</button><button id="bFree">Free play</button></div>
+</div>
+
+<div id="select" class="screen hidden">
+  <div class="selTop"><button id="selBack">‹ Title</button><h2>Rooms</h2></div>
+  <div id="rooms"></div>
+  <section class="room">
+    <div class="roomHead" id="freeHead"><span class="rn">Free play</span><span class="rt">Every shape, and shapes nobody has seen</span></div>
+    <div class="rand"><button id="bRandom" class="primary">New random shape</button><label>Corners up to <b id="randNv">12</b> <input id="randN" type="range" min="5" max="28" value="12"></label></div>
+    <div class="tiles" id="freeTiles"></div>
+  </section>
+</div>
+
+<div id="note" class="screen hidden"><div class="box">
+  <div id="noteNum"></div><h2 id="noteTitle"></h2><p id="noteText"></p>
+  <button id="noteGo" class="primary" style="padding:12px 26px;font-size:16px">Enter</button>
+</div></div>
+
+<div id="hud" class="hidden">
+  <div class="top">
+    <button id="bBack">‹ Rooms</button>
+    <div class="ttl"><div id="lvChapter"></div><div id="lvName"></div></div>
+    <div class="score"><div id="stars"></div><div id="scoreLine"></div></div>
+  </div>
+  <div id="prompt"></div>
+  <div class="bottom">
+    <div class="statusRow"><span id="status"></span><span id="readout"></span></div>
+    <div class="legend">
+      <button class="chip" id="chipHost" title="Arrow keys turn the host"><i class="sw h"></i>Host</button>
+      <button class="chip" id="chipTrav" title="Arrow keys turn the traveller"><i class="sw t"></i>Traveller</button>
+      <span class="chip"><i class="sw o"></i>Sticking out</span>
+    </div>
+    <div id="tools" class="hidden">Dragging will:
+      <button id="t_turnHost">Turn host</button><button id="t_turnTrav">Turn traveller</button><button id="t_slide">Slide shadow</button><button id="t_spin">Spin shadow</button><button id="t_pan">Move view</button><button id="bFit">Fit view</button><button id="bTight">Go to tightest spot</button>
+    </div>
+    <div class="bar">
+      <button id="bUndo" title="Z">Undo</button>
+      <button id="bResetH">Reset host</button>
+      <button id="bResetT">Reset traveller</button>
+      <button id="bHint" title="H">Hint</button>
+      <span class="sep"></span>
+      <button id="bFine" title="F">Fine: off</button>
+      <button id="bTable" title="T">Table view</button>
+      <button id="bSpinL" title="Q" aria-label="Spin shadow left">⟲</button>
+      <button id="bSpinR" title="E" aria-label="Spin shadow right">⟳</button>
+      <span class="grow"></span>
+      <div id="growBox" class="hidden"><button id="bGrowM" aria-label="Shrink traveller">−</button><span id="growVal">Size +0.00%</span><button id="bGrowP" aria-label="Grow traveller">+</button></div>
+      <button id="bPass" disabled>Pass through</button>
+    </div>
+  </div>
+</div>
+
+<div id="card" class="hidden">
+  <h2 id="cardTitle"></h2><div id="cardBody"></div>
+  <div class="menu"><button id="cardSave" class="hidden">Save as file</button><button id="cardAgain">Try it bigger</button><button id="cardNext" class="primary">Next</button><button id="cardRooms">Rooms</button></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>// Passage — geometry core. Pure JS, no dependencies. Runs in the browser and in Node (tests, solver).
+// Conventions: 3D points are [x,y,z] with y up. The table is the x-z plane, light comes straight down,
+// so a shadow point is [u,v] = [x,z]. Quaternions are [x,y,z,w].
+(function (root) {
+  'use strict';
+
+  var EPS_FIT = 1e-9;    // a shadow "fits" only if every corner is more than this far inside
+  var HULL_TOL = 1e-14;
+
+  // ---------- quaternions ----------
+  function qmul(a, b) {
+    return [
+      a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+      a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+      a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+      a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]
+    ];
+  }
+  function qnorm(q) {
+    var l = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+    return [q[0] / l, q[1] / l, q[2] / l, q[3] / l];
+  }
+  function qaxis(ax, ay, az, ang) {
+    var l = Math.hypot(ax, ay, az) || 1, s = Math.sin(ang / 2) / l;
+    return [ax * s, ay * s, az * s, Math.cos(ang / 2)];
+  }
+  function qexp(rx, ry, rz) {
+    var a = Math.hypot(rx, ry, rz);
+    if (a < 1e-15) return [0, 0, 0, 1];
+    var s = Math.sin(a / 2) / a;
+    return [rx * s, ry * s, rz * s, Math.cos(a / 2)];
+  }
+  function qmat(q) {
+    var x = q[0], y = q[1], z = q[2], w = q[3];
+    return [
+      1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w),
+      2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w),
+      2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)
+    ];
+  }
+  function qrot(q, v) {
+    var m = qmat(q);
+    return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
+  }
+  // rotation that takes unit vector a onto unit vector b
+  function qfromTo(a, b) {
+    var d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    if (d < -0.999999) {
+      var ax = Math.abs(a[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+      var c0 = [a[1] * ax[2] - a[2] * ax[1], a[2] * ax[0] - a[0] * ax[2], a[0] * ax[1] - a[1] * ax[0]];
+      return qaxis(c0[0], c0[1], c0[2], Math.PI);
+    }
+    return qnorm([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0], 1 + d]);
+  }
+  function qrandom(rng) {
+    var u1 = rng(), u2 = rng() * 2 * Math.PI, u3 = rng() * 2 * Math.PI;
+    var a = Math.sqrt(1 - u1), b = Math.sqrt(u1);
+    return [a * Math.sin(u2), a * Math.cos(u2), b * Math.sin(u3), b * Math.cos(u3)];
+  }
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- shadows ----------
+  // Shadow corners of verts turned by q, scaled by s and slid by (tx,ty) on the table.
+  function project(verts, q, s, tx, ty) {
+    var m = qmat(q), out = new Array(verts.length);
+    s = s === undefined ? 1 : s; tx = tx || 0; ty = ty || 0;
+    for (var i = 0; i < verts.length; i++) {
+      var v = verts[i];
+      out[i] = [tx + s * (m[0] * v[0] + m[1] * v[1] + m[2] * v[2]), ty + s * (m[6] * v[0] + m[7] * v[1] + m[8] * v[2])];
+    }
+    return out;
+  }
+  function cross2(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+  // Outline of a set of points: counter-clockwise, no repeated or in-line points.
+  function hull2d(P) {
+    var n = P.length;
+    if (n < 3) return P.slice();
+    var S = P.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    var H = [], i;
+    for (i = 0; i < n; i++) {
+      while (H.length >= 2 && cross2(H[H.length - 2], H[H.length - 1], S[i]) <= HULL_TOL) H.pop();
+      H.push(S[i]);
+    }
+    var lo = H.length + 1;
+    for (i = n - 2; i >= 0; i--) {
+      while (H.length >= lo && cross2(H[H.length - 2], H[H.length - 1], S[i]) <= HULL_TOL) H.pop();
+      H.push(S[i]);
+    }
+    H.pop();
+    return H;
+  }
+  // Each edge of a CCW outline as an outward unit normal n and offset d: inside means n.p < d.
+  function edgesOf(H) {
+    var E = [];
+    for (var i = 0; i < H.length; i++) {
+      var a = H[i], b = H[(i + 1) % H.length];
+      var ex = b[0] - a[0], ey = b[1] - a[1], l = Math.hypot(ex, ey);
+      if (l < 1e-300) continue;
+      var nx = ey / l, ny = -ex / l;
+      E.push([nx, ny, nx * a[0] + ny * a[1]]);
+    }
+    return E;
+  }
+  // Smallest distance from any point to the outline, positive when inside. The exact fit test.
+  function clearance(E, pts) {
+    var best = Infinity;
+    for (var j = 0; j < E.length; j++) {
+      var e = E[j];
+      for (var i = 0; i < pts.length; i++) {
+        var s = e[2] - e[0] * pts[i][0] - e[1] * pts[i][1];
+        if (s < best) best = s;
+      }
+    }
+    return best;
+  }
+  function fits(E, pts) { return clearance(E, pts) > EPS_FIT; }
+  // Largest factor the traveller (unit-size shadow corners Q around its own centre, centre at t)
+  // can grow to before it touches the host outline. Below 1 means it sticks out as it is.
+  function maxScale(E, Q, tx, ty) {
+    var best = Infinity;
+    for (var j = 0; j < E.length; j++) {
+      var e = E[j], h = -Infinity;
+      for (var i = 0; i < Q.length; i++) {
+        var s = e[0] * Q[i][0] + e[1] * Q[i][1];
+        if (s > h) h = s;
+      }
+      var r = (e[2] - e[0] * tx - e[1] * ty) / h;
+      if (r < best) best = r;
+    }
+    return best;
+  }
+  function area2d(P) {
+    var a = 0;
+    for (var i = 0; i < P.length; i++) { var p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - p[1] * q[0]; }
+    return a / 2;
+  }
+  // Part of convex outline S that lies inside the convex outline with edges E.
+  function clip2d(S, E) {
+    var out = S;
+    for (var j = 0; j < E.length && out.length; j++) {
+      var e = E[j], inp = out; out = [];
+      for (var i = 0; i < inp.length; i++) {
+        var a = inp[i], b = inp[(i + 1) % inp.length];
+        var sa = e[0] * a[0] + e[1] * a[1] - e[2], sb = e[0] * b[0] + e[1] * b[1] - e[2];
+        if (sa <= 0) out.push(a);
+        if ((sa < 0 && sb > 0) || (sa > 0 && sb < 0)) {
+          var t = sa / (sa - sb);
+          out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]);
+        }
+      }
+    }
+    return out;
+  }
+
+  // Everything the game needs about one position, in one call.
+  // host/trav: {q}, trav also {s, tx, ty}.
+  function evaluate(verts, hq, tq, s, tx, ty) {
+    var HP = hull2d(project(verts, hq, 1, 0, 0));
+    var E = edgesOf(HP);
+    var Q = project(verts, tq, 1, 0, 0);
+    var TP = hull2d(project(verts, tq, s, tx, ty));
+    var c = clearance(E, TP);
+    var aT = area2d(TP), inside = clip2d(TP, E), aI = inside.length >= 3 ? area2d(inside) : 0;
+    var outCount = 0;
+    for (var i = 0; i < TP.length; i++) if (clearance(E, [TP[i]]) <= EPS_FIT) outCount++;
+    return {
+      host: HP, trav: TP, inside: inside, edges: E,
+      clearance: c, fits: c > EPS_FIT,
+      limit: maxScale(E, Q, tx, ty),
+      outFrac: aT > 0 ? Math.max(0, 1 - aI / aT) : 0,
+      outCount: outCount
+    };
+  }
+  // Just the growth limit for a position (used by the solver).
+  function poseScale(verts, hq, tq, tx, ty) {
+    var E = edgesOf(hull2d(project(verts, hq, 1, 0, 0)));
+    return maxScale(E, hull2d(project(verts, tq, 1, 0, 0)), tx, ty);
+  }
+
+  // ---------- solids ----------
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function orderAround(pts, n) {
+    var c = [0, 0, 0], i;
+    for (i = 0; i < pts.length; i++) { c[0] += pts[i].p[0]; c[1] += pts[i].p[1]; c[2] += pts[i].p[2]; }
+    c = [c[0] / pts.length, c[1] / pts.length, c[2] / pts.length];
+    var u = sub(pts[0].p, c), ul = Math.hypot(u[0], u[1], u[2]);
+    for (i = 1; ul < 1e-12 && i < pts.length; i++) { u = sub(pts[i].p, c); ul = Math.hypot(u[0], u[1], u[2]); }
+    u = [u[0] / ul, u[1] / ul, u[2] / ul];
+    var w = cross(n, u);
+    for (i = 0; i < pts.length; i++) { var d = sub(pts[i].p, c); pts[i].a = Math.atan2(dot(d, w), dot(d, u)); }
+    pts.sort(function (a, b) { return a.a - b.a; });
+    return pts;
+  }
+  // Faces of the convex solid on these corners. Faces are index loops, counter-clockwise seen from outside.
+  function hull3d(V) {
+    var n = V.length, eps = 1e-9, faces = [], normals = [], seen = {}, i, j, k, m;
+    var onFace = {};
+    for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) for (k = j + 1; k < n; k++) {
+      if (onFace[i * n * n + j * n + k]) continue;
+      var nn = cross(sub(V[j], V[i]), sub(V[k], V[i]));
+      var l = Math.hypot(nn[0], nn[1], nn[2]);
+      if (l < 1e-11) continue;
+      nn = [nn[0] / l, nn[1] / l, nn[2] / l];
+      var d = dot(nn, V[i]), pos = false, neg = false;
+      for (m = 0; m < n; m++) {
+        var s = dot(nn, V[m]) - d;
+        if (s > eps) pos = true; else if (s < -eps) neg = true;
+        if (pos && neg) break;
+      }
+      if (pos && neg) continue;
+      if (pos) { nn = [-nn[0], -nn[1], -nn[2]]; d = -d; }
+      var on = [];
+      for (m = 0; m < n; m++) if (Math.abs(dot(nn, V[m]) - d) <= eps) on.push({ i: m, p: V[m] });
+      var a, b, c;
+      for (a = 0; a < on.length; a++) for (b = a + 1; b < on.length; b++) for (c = b + 1; c < on.length; c++)
+        onFace[on[a].i * n * n + on[b].i * n + on[c].i] = 1;
+      var key = on.map(function (o) { return o.i; }).join(',');
+      if (seen[key]) continue;
+      seen[key] = 1;
+      orderAround(on, nn);
+      faces.push(on.map(function (o) { return o.i; }));
+      normals.push(nn);
+    }
+    var edges = [], es = {};
+    faces.forEach(function (f) {
+      for (var q = 0; q < f.length; q++) {
+        var x = f[q], y = f[(q + 1) % f.length], kk = x < y ? x + '_' + y : y + '_' + x;
+        if (!es[kk]) { es[kk] = 1; edges.push(x < y ? [x, y] : [y, x]); }
+      }
+    });
+    return { faces: faces, normals: normals, edges: edges };
+  }
+  // Solid as loose face loops in world space: [{pts:[[x,y,z]..], n:[..], cut:bool}]
+  function solidFaces(V, hull, q, s, off) {
+    s = s === undefined ? 1 : s; off = off || [0, 0, 0];
+    var W = V.map(function (v) { var r = qrot(q, v); return [r[0] * s + off[0], r[1] * s + off[1], r[2] * s + off[2]]; });
+    return hull.faces.map(function (f, i) {
+      return { pts: f.map(function (ix) { return W[ix]; }), n: qrot(q, hull.normals[i]), cut: false };
+    });
+  }
+  // Keep the part of a convex solid where n.p <= d. The new flat face is marked cut.
+  function clipSolid(F, n, d) {
+    var E = 1e-12, out = [], cap = [], i, k;
+    for (k = 0; k < F.length; k++) {
+      var pts = F[k].pts, res = [];
+      for (i = 0; i < pts.length; i++) {
+        var a = pts[i], b = pts[(i + 1) % pts.length];
+        var sa = dot(n, a) - d, sb = dot(n, b) - d;
+        if (sa <= E) { res.push(a); if (sa >= -E) cap.push(a); }
+        if ((sa < -E && sb > E) || (sa > E && sb < -E)) {
+          var t = sa / (sa - sb);
+          var p = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), a[2] + t * (b[2] - a[2])];
+          res.push(p); cap.push(p);
+        }
+      }
+      if (res.length >= 3) out.push({ pts: res, n: F[k].n, cut: F[k].cut });
+    }
+    if (!out.length) return out;
+    var uniq = [];
+    for (i = 0; i < cap.length; i++) {
+      var dup = false;
+      for (k = 0; k < uniq.length && !dup; k++)
+        if (Math.abs(uniq[k].p[0] - cap[i][0]) + Math.abs(uniq[k].p[1] - cap[i][1]) + Math.abs(uniq[k].p[2] - cap[i][2]) < 1e-10) dup = true;
+      if (!dup) uniq.push({ p: cap[i] });
+    }
+    // if the solid already has a flat face lying in this plane, the cut adds nothing new
+    var flat = false;
+    for (k = 0; k < out.length && !flat; k++) {
+      if (dot(out[k].n, n) < 1 - 1e-9) continue;
+      flat = true;
+      for (i = 0; i < out[k].pts.length; i++) if (Math.abs(dot(n, out[k].pts[i]) - d) > 1e-9) { flat = false; break; }
+    }
+    if (uniq.length >= 3 && !flat) {
+      orderAround(uniq, n);
+      out.push({ pts: uniq.map(function (o) { return o.p; }), n: n.slice(), cut: true });
+    }
+    return out;
+  }
+  function solidVolume(F) {
+    var v = 0;
+    for (var k = 0; k < F.length; k++) {
+      var p = F[k].pts;
+      for (var i = 1; i + 1 < p.length; i++) v += dot(p[0], cross(p[i], p[i + 1]));
+    }
+    return v / 6;
+  }
+  // Cut a straight vertical tunnel with outline T (CCW shadow corners) through a convex solid.
+  // Returns the ring (convex pieces that together are the host with the tunnel removed) and the plug.
+  function cutTunnel(F, T) {
+    var rest = F, pieces = [];
+    // drop corners that are not really corners (two edges in one line), so no two cuts share a plane
+    var P = T.slice(), changed = true;
+    while (changed && P.length > 3) {
+      changed = false;
+      for (var q = 0; q < P.length; q++) {
+        var a = P[(q + P.length - 1) % P.length], b = P[q], c = P[(q + 1) % P.length];
+        var l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+        if (l1 < 1e-9 || l2 < 1e-9 || Math.abs(cross2(a, b, c)) / (l1 * l2) < 1e-9) { P.splice(q, 1); changed = true; break; }
+      }
+    }
+    var E = edgesOf(P);
+    for (var j = 0; j < E.length; j++) {
+      var n = [E[j][0], 0, E[j][1]], d = E[j][2];
+      var piece = clipSolid(rest, [-n[0], 0, -n[2]], -d);
+      if (piece.length >= 4 && solidVolume(piece) > 1e-12) pieces.push(piece);
+      rest = clipSolid(rest, n, d);
+    }
+    return { ring: pieces, plug: rest };
+  }
+
+  // ---------- search ----------
+  // Nelder-Mead, maximising f.
+  function nelderMead(f, x0, step, maxIter) {
+    var n = x0.length, S = [], i, j;
+    S.push({ x: x0.slice(), f: f(x0) });
+    for (i = 0; i < n; i++) { var x = x0.slice(); x[i] += step; S.push({ x: x, f: f(x) }); }
+    function mix(c, w, t) { var r = new Array(n); for (var q = 0; q < n; q++) r[q] = c[q] + t * (w[q] - c[q]); return r; }
+    for (var it = 0; it < maxIter; it++) {
+      S.sort(function (a, b) { return b.f - a.f; });
+      var worst = S[n], c = new Array(n).fill(0);
+      for (i = 0; i < n; i++) for (j = 0; j < n; j++) c[j] += S[i].x[j] / n;
+      var xr = mix(c, worst.x, -1), fr = f(xr);
+      if (fr > S[0].f) {
+        var xe = mix(c, worst.x, -2), fe = f(xe);
+        S[n] = fe > fr ? { x: xe, f: fe } : { x: xr, f: fr };
+      } else if (fr > S[n - 1].f) {
+        S[n] = { x: xr, f: fr };
+      } else {
+        var xc = fr > worst.f ? mix(c, worst.x, -0.5) : mix(c, worst.x, 0.5), fc = f(xc);
+        if (fc > Math.max(worst.f, fr)) S[n] = { x: xc, f: fc };
+        else for (i = 1; i <= n; i++) { S[i].x = mix(S[0].x, S[i].x, 0.5); S[i].f = f(S[i].x); }
+      }
+    }
+    S.sort(function (a, b) { return b.f - a.f; });
+    return S[0];
+  }
+  function isCentrallySymmetric(V) {
+    for (var i = 0; i < V.length; i++) {
+      var ok = false;
+      for (var j = 0; j < V.length && !ok; j++)
+        if (Math.abs(V[i][0] + V[j][0]) + Math.abs(V[i][1] + V[j][1]) + Math.abs(V[i][2] + V[j][2]) < 1e-9) ok = true;
+      if (!ok) return false;
+    }
+    return true;
+  }
+  // One search step: a random start, climbed. Returns {mu,hq,tq,tx,ty}.
+  function searchOnce(V, rng, sym, start, step, iters) {
+    var bh = start ? start.hq : qrandom(rng), bt = start ? start.tq : qrandom(rng);
+    var x0 = sym ? [0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, 0, 0, start ? start.tx : 0, start ? start.ty : 0];
+    function pose(x) {
+      return {
+        hq: qnorm(qmul(qexp(x[0], x[1], x[2]), bh)), tq: qnorm(qmul(qexp(x[3], x[4], x[5]), bt)),
+        tx: sym ? 0 : x[6], ty: sym ? 0 : x[7]
+      };
+    }
+    var r = nelderMead(function (x) { var p = pose(x); return poseScale(V, p.hq, p.tq, p.tx, p.ty); }, x0, step, iters);
+    var p = pose(r.x); p.mu = r.f;
+    return p;
+  }
+  function polish(V, best, rng, sym) {
+    var steps = [0.05, 0.02, 0.008, 0.003, 0.001, 0.0003, 0.0001, 0.00003];
+    for (var rep = 0; rep < 3; rep++)
+      for (var i = 0; i < steps.length; i++) {
+        var r = searchOnce(V, rng, sym, best, steps[i], 500);
+        if (r.mu > best.mu) best = r;
+      }
+    return best;
+  }
+  // Search for the best passage for a time budget. A result with mu > 1 is a real passage
+  // (check it again with evaluate); a result below 1 proves nothing.
+  function solve(V, opts) {
+    opts = opts || {};
+    var rng = opts.rng || mulberry32(opts.seed || 1), sym = isCentrallySymmetric(V);
+    var t0 = Date.now(), budget = opts.ms || 1000, best = null, tries = 0;
+    while (Date.now() - t0 < budget) {
+      var r = searchOnce(V, rng, sym, null, 0.35, opts.iters || 220);
+      tries++;
+      if (!best || r.mu > best.mu) { best = r; }
+      if (opts.stopAbove && best.mu > opts.stopAbove) break;
+    }
+    if (best && opts.polish !== false) best = polish(V, best, rng, sym);
+    best.tries = tries;
+    return best;
+  }
+
+  var G = {
+    EPS_FIT: EPS_FIT,
+    qmul: qmul, qnorm: qnorm, qaxis: qaxis, qexp: qexp, qmat: qmat, qrot: qrot, qfromTo: qfromTo, qrandom: qrandom,
+    mulberry32: mulberry32,
+    project: project, hull2d: hull2d, edgesOf: edgesOf, clearance: clearance, fits: fits, maxScale: maxScale,
+    area2d: area2d, clip2d: clip2d, evaluate: evaluate, poseScale: poseScale,
+    hull3d: hull3d, solidFaces: solidFaces, clipSolid: clipSolid, solidVolume: solidVolume, cutTunnel: cutTunnel,
+    nelderMead: nelderMead, isCentrallySymmetric: isCentrallySymmetric, searchOnce: searchOnce, polish: polish, solve: solve
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = G;
+  else root.G = G;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+// Passage — the shapes. Every shape is a list of corners, built in code and scaled to fit a unit ball.
+(function (root) {
+  'use strict';
+  var PHI = (1 + Math.sqrt(5)) / 2;
+
+  function uniq(L) {
+    var seen = {}, out = [];
+    L.forEach(function (v) {
+      var k = v.map(function (c) { return (Math.round(c * 1e9) / 1e9 + 0).toFixed(9); }).join(',');
+      if (!seen[k]) { seen[k] = 1; out.push(v); }
+    });
+    return out;
+  }
+  function signed(v) {
+    var out = [];
+    for (var m = 0; m < 8; m++) out.push([m & 1 ? -v[0] : v[0], m & 2 ? -v[1] : v[1], m & 4 ? -v[2] : v[2]]);
+    return out;
+  }
+  var EVEN = [[0, 1, 2], [1, 2, 0], [2, 0, 1]], ODD = [[0, 2, 1], [2, 1, 0], [1, 0, 2]];
+  function gen(seeds, perms) {
+    var out = [];
+    seeds.forEach(function (s) {
+      perms.forEach(function (p) { signed([s[p[0]], s[p[1]], s[p[2]]]).forEach(function (v) { out.push(v); }); });
+    });
+    return uniq(out);
+  }
+  var ALL = EVEN.concat(ODD);
+  function fit(V) {
+    var c = [0, 0, 0], r = 0;
+    V.forEach(function (v) { c[0] += v[0] / V.length; c[1] += v[1] / V.length; c[2] += v[2] / V.length; });
+    V = V.map(function (v) { return [v[0] - c[0], v[1] - c[1], v[2] - c[2]]; });
+    V.forEach(function (v) { r = Math.max(r, Math.hypot(v[0], v[1], v[2])); });
+    return V.map(function (v) { return [v[0] / r, v[1] / r, v[2] / r]; });
+  }
+  function matMul(a, b) {
+    var r = [];
+    for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) r.push(a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j]);
+    return r;
+  }
+  function axisMat(ax, ang) {
+    var l = Math.hypot(ax[0], ax[1], ax[2]), x = ax[0] / l, y = ax[1] / l, z = ax[2] / l, c = Math.cos(ang), s = Math.sin(ang), t = 1 - c;
+    return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
+  }
+  function closure(gens) {
+    var G = [[1, 0, 0, 0, 1, 0, 0, 0, 1]], keys = {};
+    function key(m) { return m.map(function (c) { return (Math.round(c * 1e6) / 1e6 + 0).toFixed(6); }).join(','); }
+    keys[key(G[0])] = 1;
+    for (var i = 0; i < G.length; i++) gens.forEach(function (g) {
+      var m = matMul(g, G[i]), k = key(m);
+      if (!keys[k]) { keys[k] = 1; G.push(m); }
+    });
+    return G;
+  }
+  function orbit(seed, G) {
+    return uniq(G.map(function (m) {
+      return [m[0] * seed[0] + m[1] * seed[1] + m[2] * seed[2], m[3] * seed[0] + m[4] * seed[1] + m[5] * seed[2], m[6] * seed[0] + m[7] * seed[1] + m[8] * seed[2]];
+    }));
+  }
+  var octaGroup = function () { return closure([axisMat([0, 0, 1], Math.PI / 2), axisMat([1, 1, 1], 2 * Math.PI / 3)]); };
+  var icoGroup = function () { return closure([axisMat([0, 1, PHI], 2 * Math.PI / 5), axisMat([1, 1, 1], 2 * Math.PI / 3)]); };
+
+  function prism(n) {
+    var r = 1 / (2 * Math.sin(Math.PI / n)), V = [];
+    for (var i = 0; i < n; i++) {
+      var a = 2 * Math.PI * i / n;
+      V.push([r * Math.cos(a), 0.5, r * Math.sin(a)], [r * Math.cos(a), -0.5, r * Math.sin(a)]);
+    }
+    return V;
+  }
+  function pyramid(n) {
+    var r = 1 / (2 * Math.sin(Math.PI / n)), V = [[0, Math.sqrt(1 - r * r), 0]];
+    for (var i = 0; i < n; i++) { var a = 2 * Math.PI * i / n; V.push([r * Math.cos(a), 0, r * Math.sin(a)]); }
+    return V;
+  }
+
+  // The Noperthedron (Steininger and Yurkevich, 2025): three points, each copied by the 30 maps
+  // (-1)^l * (turn by 2*pi*k/15 about the axis), k = 0..14, l = 0,1.
+  function noperthedron() {
+    var C = [
+      [152024884 / 259375205, 0, 210152163 / 259375205],
+      [0.6632738028, 0.6106948881, 0.3980949609],
+      [0.8193990033, 0.5298215096, 0.1230614493]
+    ], V = [];
+    C.forEach(function (c) {
+      for (var k = 0; k < 15; k++) for (var l = 0; l < 2; l++) {
+        var a = 2 * Math.PI * k / 15, s = l ? -1 : 1;
+        var x = Math.cos(a) * c[0] - Math.sin(a) * c[1], y = Math.sin(a) * c[0] + Math.cos(a) * c[1];
+        V.push([s * x, s * c[2], s * y]); // the paper's z axis is our up axis
+      }
+    });
+    return V;
+  }
+
+  function randomShape(seed, n) {
+    var rng = root.G.mulberry32(seed), V = [];
+    n = n || (6 + Math.floor(rng() * 13));
+    for (var i = 0; i < n; i++) {
+      var z = 2 * rng() - 1, a = 2 * Math.PI * rng(), r = Math.sqrt(1 - z * z);
+      var k = 0.72 + 0.28 * rng(); // not all on one ball, so the solid has some character
+      V.push([k * r * Math.cos(a), k * z, k * r * Math.sin(a)]);
+    }
+    // keep only the corners that are really corners of the solid
+    var h = root.G.hull3d(V), used = {};
+    h.faces.forEach(function (f) { f.forEach(function (i) { used[i] = 1; }); });
+    return V.filter(function (_, i) { return used[i]; });
+  }
+
+  // Johnson solids J72-J75 and J77: a rhombicosidodecahedron with one or more of its pentagonal caps
+  // turned by 36 degrees (gyrate) or sliced off (diminished).
+  function gyrated(turn, remove) {
+    var V = gen([[1, 1, PHI * PHI * PHI], [PHI * PHI, PHI, 2 * PHI], [2 + PHI, 0, PHI * PHI]], EVEN);
+    function cap(ax) {
+      return V.map(function (v, i) { return { i: i, d: v[0] * ax[0] + v[1] * ax[1] + v[2] * ax[2] }; })
+        .sort(function (a, b) { return b.d - a.d; }).slice(0, 5).map(function (o) { return o.i; });
+    }
+    var gone = {};
+    var caps = turn.map(cap), cuts = (remove || []).map(cap);
+    turn.forEach(function (ax, k) {
+      var m = axisMat(ax, Math.PI / 5);
+      caps[k].forEach(function (i) {
+        var v = V[i];
+        V[i] = [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
+      });
+    });
+    cuts.forEach(function (c) { c.forEach(function (i) { gone[i] = 1; }); });
+    return V.filter(function (_, i) { return !gone[i]; });
+  }
+  var A1 = [0, PHI, 1], A1o = [0, -PHI, -1], A2 = [0, -PHI, 1], A3 = [1, 0, -PHI];
+
+  var T = 1.8392867552141612;      // tribonacci constant, for the snub cube
+  var SNUB_DODECA_SEED = null;     // filled in below
+
+  var defs = {
+    cube: { name: 'Cube', make: function () { return gen([[1, 1, 1]], EVEN); }, V: 8, E: 12, F: 6 },
+    tetrahedron: { name: 'Tetrahedron', make: function () { return [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]; }, V: 4, E: 6, F: 4 },
+    octahedron: { name: 'Octahedron', make: function () { return gen([[1, 0, 0]], EVEN); }, V: 6, E: 12, F: 8 },
+    dodecahedron: { name: 'Dodecahedron', make: function () { return gen([[1, 1, 1], [0, 1 / PHI, PHI]], EVEN); }, V: 20, E: 30, F: 12 },
+    icosahedron: { name: 'Icosahedron', make: function () { return gen([[0, 1, PHI]], EVEN); }, V: 12, E: 30, F: 20 },
+    triPrism: { name: 'Triangular prism', make: function () { return prism(3); }, V: 6, E: 9, F: 5 },
+    pentPrism: { name: 'Pentagonal prism', make: function () { return prism(5); }, V: 10, E: 15, F: 7 },
+    hexPrism: { name: 'Hexagonal prism', make: function () { return prism(6); }, V: 12, E: 18, F: 8 },
+    squarePyramid: { name: 'Square pyramid', make: function () { return pyramid(4); }, V: 5, E: 8, F: 5 },
+    pentPyramid: { name: 'Pentagonal pyramid', make: function () { return pyramid(5); }, V: 6, E: 10, F: 6 },
+    truncTetra: {
+      name: 'Truncated tetrahedron', V: 12, E: 18, F: 8,
+      make: function () { return gen([[1, 1, 3]], ALL).filter(function (v) { return v[0] * v[1] * v[2] > 0; }); }
+    },
+    cubocta: { name: 'Cuboctahedron', make: function () { return gen([[1, 1, 0]], EVEN); }, V: 12, E: 24, F: 14 },
+    truncCube: { name: 'Truncated cube', make: function () { return gen([[Math.SQRT2 - 1, 1, 1]], EVEN); }, V: 24, E: 36, F: 14 },
+    truncOcta: { name: 'Truncated octahedron', make: function () { return gen([[0, 1, 2]], ALL); }, V: 24, E: 36, F: 14 },
+    rhombicubocta: { name: 'Rhombicuboctahedron', make: function () { return gen([[1, 1, 1 + Math.SQRT2]], EVEN); }, V: 24, E: 48, F: 26 },
+    truncCubocta: { name: 'Truncated cuboctahedron', make: function () { return gen([[1, 1 + Math.SQRT2, 1 + 2 * Math.SQRT2]], ALL); }, V: 48, E: 72, F: 26 },
+    icosidodeca: { name: 'Icosidodecahedron', make: function () { return gen([[0, 0, PHI], [0.5, PHI / 2, PHI * PHI / 2]], EVEN); }, V: 30, E: 60, F: 32 },
+    truncIcosa: {
+      name: 'Truncated icosahedron', V: 60, E: 90, F: 32,
+      make: function () { return gen([[0, 1, 3 * PHI], [1, 2 + PHI, 2 * PHI], [PHI, 2, 2 * PHI + 1]], EVEN); }
+    },
+    truncDodeca: {
+      name: 'Truncated dodecahedron', V: 60, E: 90, F: 32,
+      make: function () { return gen([[0, 1 / PHI, 2 + PHI], [1 / PHI, PHI, 2 * PHI], [PHI, 2, PHI + 1]], EVEN); }
+    },
+    truncIcosidodeca: {
+      name: 'Truncated icosidodecahedron', V: 120, E: 180, F: 62,
+      make: function () {
+        return gen([[1 / PHI, 1 / PHI, 3 + PHI], [2 / PHI, PHI, 1 + 2 * PHI], [1 / PHI, PHI * PHI, 3 * PHI - 1],
+          [2 * PHI - 1, 2, 2 + PHI], [PHI, 3, 2 * PHI]], EVEN);
+      }
+    },
+    rhombicosidodeca: {
+      name: 'Rhombicosidodecahedron', V: 60, E: 120, F: 62,
+      make: function () { return gen([[1, 1, PHI * PHI * PHI], [PHI * PHI, PHI, 2 * PHI], [2 + PHI, 0, PHI * PHI]], EVEN); }
+    },
+    snubCube: { name: 'Snub cube', make: function () { return orbit([1, 1 / T, T], octaGroup()); }, V: 24, E: 60, F: 38 },
+    snubDodeca: { name: 'Snub dodecahedron', make: function () { return orbit(SNUB_DODECA_SEED, icoGroup()); }, V: 60, E: 150, F: 92 },
+    j72: { name: 'Gyrate rhombicosidodecahedron', make: function () { return gyrated([A1]); }, V: 60, E: 120, F: 62 },
+    j73: { name: 'Parabigyrate rhombicosidodecahedron', make: function () { return gyrated([A1, A1o]); }, V: 60, E: 120, F: 62 },
+    j74: { name: 'Metabigyrate rhombicosidodecahedron', make: function () { return gyrated([A1, A2]); }, V: 60, E: 120, F: 62 },
+    j75: { name: 'Trigyrate rhombicosidodecahedron', make: function () { return gyrated([A1, A2, A3]); }, V: 60, E: 120, F: 62 },
+    j77: { name: 'Paragyrate diminished rhombicosidodecahedron', make: function () { return gyrated([A1o], [A1]); }, V: 55, E: 105, F: 52 },
+    noperthedron: { name: 'Noperthedron', make: noperthedron, V: 90, E: 240, F: 152, irregular: true }
+  };
+  // Seed corner of the snub dodecahedron in the frame of icoGroup(); found by tools/snubseed.js
+  // (all 150 edges equal to 12 digits) and checked again by the tests.
+  SNUB_DODECA_SEED = [0.29827370716197016, 0.2633386803754013, 0.9174342129188325];
+
+  var cache = {};
+  function get(id) {
+    if (cache[id]) return cache[id];
+    var d = defs[id], V;
+    if (d) V = fit(d.make());
+    else if (id.indexOf('random:') === 0) { var p = id.split(':'); V = fit(randomShape(+p[1], p[2] ? +p[2] : 0)); }
+    else throw new Error('unknown shape ' + id);
+    var s = { id: id, name: d ? d.name : 'Random shape ' + id.split(':')[1], verts: V, hull: root.G.hull3d(V), def: d || null };
+    cache[id] = s;
+    return s;
+  }
+  var S = { defs: defs, get: get, ids: Object.keys(defs), icoGroup: icoGroup, orbit: orbit, fit: fit, PHI: PHI, _setSnubSeed: function (s) { SNUB_DODECA_SEED = s; delete cache.snubDodeca; } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = S;
+  else root.SHAPES = S;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+// made by build.js from tools/out: the best passage the solver found for each shape
+window.SOLUTIONS = {"cube":{"mu":1.0606601717798203,"hq":[0.2351233687464263,-0.270463622119923,0.8820716352323505,-0.30580395827659085],"tq":[0.23010248162289218,0.23010248162288657,0.6686201073487014,0.6686201073486995],"tx":0,"ty":0},"cubocta":{"mu":1.0146118723545663,"hq":[-0.812692942509773,-0.42852442843844396,0.3580576742926853,-0.166408224876132],"tq":[-0.7788023443246154,0.22091811457687394,-0.4267810247296684,-0.40313775816335595],"tx":0,"ty":0},"dodecahedron":{"mu":1.0108230607528803,"hq":[-0.28626140885801343,-0.6674787344523346,0.20459236619029939,-0.6562533874573067],"tq":[0.33582704982805867,-0.6102614628482064,0.43210760453746555,0.5727863106491311],"tx":0,"ty":0},"hexPrism":{"mu":1.0833333333333333,"hq":[-0.12306724900893708,0.7997044922959254,0.24855086969598295,-0.5324937956412819],"tq":[-0.5885665693685955,-0.6336828207273831,0.3919048269946187,-0.31376118739415054],"tx":0,"ty":0},"icosahedron":{"mu":1.0108230607528017,"hq":[-0.5237929225634894,0.775067608878141,0.15854956951159438,-0.3158689759188258],"tq":[-0.6344452570447633,-0.36209434919028677,-0.5226589759747902,0.43953895496400575],"tx":0,"ty":0},"icosidodeca":{"mu":1.0008854278875856,"hq":[-0.4405650625131241,0.24292121120371948,-0.8551185960831897,-0.12515549317884467],"tq":[0.16795928236111546,-0.5717527297357542,-0.4086238397692886,0.691314004690094],"tx":0,"ty":0},"j72":{"mu":1.0000000000000004,"hq":[0.7755461621077099,-0.3682145210111435,0.14409997059408036,0.4921193101589505],"tq":[-0.0737685896774146,0.8289603403443794,0.12414434869288628,0.5403435296186627],"tx":-3.6264408761369376e-17,"ty":1.5346708903716604e-16},"j73":{"mu":1.0000000000000007,"hq":[0.09488158485095514,-0.7511987262936044,-0.34130246796675817,-0.5569655140408943],"tq":[-0.25062330998430854,0.7867354264052041,0.5497050653259786,-0.1267267394297359],"tx":0,"ty":0},"j74":{"mu":1,"hq":[0.39696956515465115,0.18669613337717,0.16256393476277128,0.8838171107403311],"tq":[0.16819786880152288,-0.34474481384349387,-0.8586061477110338,0.34008230381991117],"tx":2.285311517533724e-17,"ty":1.0468107919723406e-16},"j75":{"mu":1,"hq":[0.39696956515465115,0.18669613337717,0.16256393476277128,0.8838171107403311],"tq":[0.16819786880152288,-0.34474481384349387,-0.8586061477110338,0.34008230381991117],"tx":2.285311517533724e-17,"ty":1.0468107919723406e-16},"j77":{"mu":1.0000000000000004,"hq":[0.9332412743229089,0.061679161905744274,0.239289224635593,0.26076248169561317],"tq":[0.44651768473859277,0.7474860712799295,0.425044427678572,-0.2474343649487227],"tx":-0.040323104175857105,"ty":-0.002860743186148377},"noperthedron":{"mu":1.0000000000000004,"hq":[0.804710991922099,0.09655293793316547,0.5697968033494805,0.1358283937508635],"tq":[-0.8958140026568655,0.0693543705769003,0.41200176003437156,-0.15153149393557472],"tx":0,"ty":0},"octahedron":{"mu":1.060660171779821,"hq":[-6.8472294573310896e-9,0.963783669622328,3.7950401411889416e-8,-0.2666852792512521],"tq":[0.8603387975600724,0.04998550085255199,-0.30520564664865507,-0.4051766483537575],"tx":0,"ty":0},"pentPrism":{"mu":1.01346118532267,"hq":[0.637850293360516,0.36622761205080023,-0.6682793577966766,-0.11147663151680602],"tq":[-0.43711787157749993,2.5675325259260607e-14,-0.8994042285577469,3.278324766497378e-14],"tx":-0.012928495096736435,"ty":0.07652299593072534},"pentPyramid":{"mu":1.0514613480971462,"hq":[-0.09726578959410782,0.2288822352579323,-0.3764317357741257,0.8924412792223623],"tq":[0.1542495820898469,-0.4676188601362088,-0.6900775800046804,-0.5304079577503568],"tx":-0.01873916077168525,"ty":-0.10324356823445269},"rhombicosidodeca":{"mu":1.0000000000000009,"hq":[0.3350399544898199,-0.266013935868737,0.640598700438903,0.6376661507521563],"tq":[-0.035979284153914964,0.9396593707748079,-0.3386054804162509,-0.033046734467168055],"tx":0,"ty":0},"rhombicubocta":{"mu":1.0128198471663088,"hq":[-0.16176072069933561,-0.42460931281636355,-0.7919078963609008,0.40794887472537583],"tq":[0.9280489868843832,-1.3382982541644699e-15,0.37245815596234416,-4.184967518305072e-15],"tx":0,"ty":0},"snubCube":{"mu":1.0000000000000002,"hq":[0.4358379461235879,-0.2032864501923116,0.8267995055633064,-0.29175757314464623],"tq":[0.728380764519823,0.5144877256355157,-0.10188020876929672,0.4408903096111737],"tx":-9.758259764275441e-17,"ty":-2.477322274544003e-16},"snubDodeca":{"mu":1.0000000000000007,"hq":[0.5256106036179903,0.7611944297500215,-0.3773425790763909,-0.04392165181148832],"tq":[0.3394413910515495,-0.9224303952615162,-0.0820840880146227,0.16481477613818332],"tx":4.990529601086961e-17,"ty":6.70340580289522e-17},"squarePyramid":{"mu":1.1715727002870886,"hq":[0.8148130380066535,-0.00022955169903734446,0.5797237126941085,-0.0002781016800598275],"tq":[-0.5992095533799079,-0.15823582663074937,0.37543030130538474,0.6891744504626407],"tx":-0.020159414497862717,"ty":-0.05798201167811686},"tetrahedron":{"mu":1.0145807533280187,"hq":[0.44111565451493945,0.7518698004042952,0.1092527988228862,-0.4776741656518888],"tq":[0.04290728044333844,0.08281994806047792,-0.4576152903634298,-0.8842443483075311],"tx":-0.019604291688536637,"ty":0.10521797992292767},"triPrism":{"mu":1.0704657042098078,"hq":[-0.283652346873661,0.8084397927187161,-0.5020114676381344,0.11811407207352606],"tq":[3.5558679814203394e-11,0.7137964101407447,-8.256762303541103e-11,-0.7003532571996692],"tx":-0.1428391037080567,"ty":-0.08647695541201346},"truncCube":{"mu":1.0306624927073977,"hq":[-0.296006017781227,-0.22843998399984322,0.7735958979220406,-0.5116102010961503],"tq":[-0.4861909189492373,0.5134378154472904,0.5134378154473013,0.486190918949247],"tx":0,"ty":0},"truncCubocta":{"mu":1.0065959633279216,"hq":[0.6039582416437365,0.5138881652618289,0.28247080440549965,0.5397811043496684],"tq":[1.264715328844721e-14,-0.16205423898316787,-1.720482169759291e-14,-0.9867818520967976],"tx":0,"ty":0},"truncDodeca":{"mu":1.0016143592013191,"hq":[0.35356432567932905,-0.5291738617069975,-0.38275280578857596,0.6696772217673213],"tq":[-0.08642575314857093,0.5056840486167198,0.46165102111811923,0.723666060326103],"tx":0,"ty":0},"truncIcosa":{"mu":1.0019651861850727,"hq":[0.318928151673315,0.4114698631271994,-0.4389126625415212,-0.7323476363510978],"tq":[0.7230782665886659,0.03574300266556516,-0.6889994624070057,-0.03405875732372648],"tx":0,"ty":0},"truncIcosidodeca":{"mu":1.0020659606289537,"hq":[0.7304404400799387,-0.09920239021149946,-0.3355052183991969,-0.5865593726973068],"tq":[0.7604152769819393,-0.30774736800054364,-0.5712067083989667,0.027983214633707204],"tx":0,"ty":0},"truncOcta":{"mu":1.0146118723545805,"hq":[-0.7277535229473341,0.5851492482194683,0.35034813244071566,-0.07232809441177245],"tq":[-0.4981354935718826,-0.0026319121593014667,0.5018575794425223,-0.7071018830680449],"tx":0,"ty":0},"truncTetra":{"mu":1.0142554263115446,"hq":[-0.5608132967091638,0.38936587623221114,0.30667676259270876,-0.6631983292694407],"tq":[-0.2829800076028051,-0.6219537289735764,0.25762166970936734,-0.6831741722351169],"tx":-0.04726383079275016,"ty":0.04790292361108586}};
+if (typeof module !== "undefined") module.exports = window.SOLUTIONS;
+
+;
+// Passage — rooms, levels, and the short notes between them.
+// lit: best size published for the shape (how many times bigger the traveller can be), with its standing.
+// status: solved | open (nobody knows) | claimed (reported impossible in 2026, under review) | impossible (proven)
+(function () {
+  'use strict';
+  var BEST = 3 * Math.SQRT2 / 4;
+  var chapters = [
+    {
+      id: 'c1', title: 'The bet', num: 'Room 1',
+      note: 'In the 1600s Prince Rupert of the Rhine made a bet: you can cut a hole through a cube big enough for a second cube of the same size to pass through, and the first cube will not fall apart. It sounds wrong. He won.',
+      levels: [
+        { shape: 'cube', lit: BEST, kind: 'proven', line: 'Two equal cubes. One has to go through the other.' }
+      ]
+    },
+    {
+      id: 'c2', title: 'The five classics', num: 'Room 2',
+      note: 'A hundred years after the bet, Pieter Nieuwland asked how much bigger the second cube could be. His answer was just over 6 percent, and no cube larger than that can ever pass. Every score in this game is that same measurement.',
+      levels: [
+        { shape: 'octahedron', lit: BEST, kind: 'known', line: 'Eight faces. As roomy as the cube.' },
+        { shape: 'tetrahedron', lit: 1.01461187233467, kind: 'known', line: 'Four faces, four corners, and not much room.' },
+        { shape: 'dodecahedron', lit: 1.01082306075208, kind: 'known', line: 'Twelve pentagons. Nearly a ball. About one percent of room.' },
+        { shape: 'icosahedron', lit: 1.01082306075264, kind: 'known', line: 'Twenty triangles. The same thin margin as the dodecahedron.' }
+      ]
+    },
+    {
+      id: 'c3', title: 'Harder shapes', num: 'Room 3',
+      note: 'One by one, mathematicians tried other shapes, and each one let its twin through. So in 2017 the question was asked out loud: can every solid with flat faces and no dents do this? For years, no one could find one that could not.',
+      levels: [
+        { shape: 'squarePyramid', lit: 1.171572874948, kind: 'known', line: 'A pyramid. Generous, once you see it.' },
+        { shape: 'hexPrism', lit: null, line: 'A six-sided prism.' },
+        { shape: 'triPrism', lit: null, line: 'A three-sided prism.' },
+        { shape: 'truncCube', lit: 1.030661650181, kind: 'known', line: 'A cube with its corners sliced off.' },
+        { shape: 'cubocta', lit: 1.014611872354, kind: 'known', line: 'A cube sliced all the way to the middle of its edges.' },
+        { shape: 'truncOcta', lit: 1.014602, kind: 'known', line: 'An octahedron with its corners sliced off.' },
+        { shape: 'truncTetra', lit: 1.014255711995, kind: 'known', line: 'A tetrahedron with its corners sliced off.' },
+        { shape: 'rhombicubocta', lit: 1.012819, kind: 'known', line: 'Twenty-six faces. Tighter again.' }
+      ]
+    },
+    {
+      id: 'c4', title: 'The edge of what is known', num: 'Room 4', precise: true,
+      note: 'For these shapes a passage exists, but the gap is hair-thin, and it took computer searches to find them. Use the table view to zoom in on the shadows, and fine mode for small turns. You will need both.',
+      levels: [
+        { shape: 'truncCubocta', lit: 1.006563, kind: 'known', line: 'Room to spare: about two thirds of one percent.' },
+        { shape: 'truncIcosidodeca', lit: 1.002048, kind: 'known', line: '120 corners. About a fifth of one percent.' },
+        { shape: 'truncIcosa', lit: 1.001965186189, kind: 'known', line: 'The football. About a fifth of one percent.' },
+        { shape: 'truncDodeca', lit: 1.001614361787, kind: 'known', line: 'About a sixth of one percent.' },
+        { shape: 'icosidodeca', lit: 1.000885427887, kind: 'known', line: 'The thinnest known: under a tenth of one percent.' }
+      ]
+    },
+    {
+      id: 'c5', title: 'The open question', num: 'Room 5', precise: true,
+      note: 'For the shapes in this room, nobody has found a passage, and nobody has proved there is none. As far as we could confirm in November 2026, they are open. There are no stars here and no number to chase.',
+      levels: [
+        { shape: 'j72', status: 'open', line: 'Unsolved. Nobody knows whether a passage exists.' },
+        { shape: 'j73', status: 'open', line: 'Unsolved. Nobody knows whether a passage exists.' },
+        { shape: 'j74', status: 'open', line: 'Unsolved. Nobody knows whether a passage exists.' },
+        { shape: 'j75', status: 'open', line: 'Unsolved. Nobody knows whether a passage exists.' },
+        { shape: 'j77', status: 'open', line: 'Unsolved. Nobody knows whether a passage exists.' }
+      ]
+    },
+    {
+      id: 'c6', title: 'The last room', num: 'Room 6', precise: true,
+      note: 'In 2025 Jakob Steininger and Sergey Yurkevich found the first shape that cannot do it: the Noperthedron, with 90 corners and 152 faces. A computer split every possible pair of angles into about 18 million cases and ruled out each one. This level cannot be won.',
+      levels: [
+        { shape: 'noperthedron', status: 'impossible', line: 'This cannot be won. Turn it and watch: its shadow always sticks out somewhere.' },
+        { shape: 'rhombicosidodeca', status: 'claimed', line: 'Open until 2026. A computer proof now reports that no passage exists. It is still being checked.' },
+        { shape: 'snubCube', status: 'claimed', line: 'Open until 2026. A computer proof now reports that no passage exists. It is still being checked.' },
+        { shape: 'snubDodeca', status: 'claimed', line: 'Open until 2026. A computer proof now reports that no passage exists. It is still being checked.' }
+      ]
+    }
+  ];
+  var byShape = {};
+  chapters.forEach(function (c, ci) {
+    c.levels.forEach(function (l, li) { l.id = l.shape; l.ch = ci; l.idx = li; l.status = l.status || 'solved'; byShape[l.shape] = l; });
+  });
+  window.LEVELS = { chapters: chapters, byShape: byShape, extraShapes: ['pentPrism', 'pentPyramid'] };
+})();
+
+;
+// Passage — all sound is made here in code: the table hum, ticks, the cut, the airy note, and the music.
+(function () {
+  'use strict';
+  var ctx = null, master, sfx, music, echoIn, noiseBuf, humOn = false, musicTimer = null;
+  var on = { sound: true, music: true };
+
+  function init() {
+    if (ctx) return true;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    try { ctx = new AC(); } catch (e) { return false; }
+    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    sfx = ctx.createGain(); sfx.gain.value = on.sound ? 1 : 0; sfx.connect(master);
+    music = ctx.createGain(); music.gain.value = on.music ? 1 : 0; music.connect(master);
+    // a soft echo that stands in for a big quiet room
+    echoIn = ctx.createGain();
+    var d1 = ctx.createDelay(1.5), d2 = ctx.createDelay(1.5), fb = ctx.createGain(), lp = ctx.createBiquadFilter(), wet = ctx.createGain();
+    d1.delayTime.value = 0.37; d2.delayTime.value = 0.53; fb.gain.value = 0.42; lp.type = 'lowpass'; lp.frequency.value = 1800; wet.gain.value = 0.5;
+    echoIn.connect(d1); d1.connect(d2); d2.connect(lp); lp.connect(fb); fb.connect(d1); d1.connect(wet); d2.connect(wet); wet.connect(master);
+    var len = ctx.sampleRate * 2; noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var ch = noiseBuf.getChannelData(0); for (var i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    startHum(); scheduleMusic(1500);
+    return true;
+  }
+  function unlock() { if (init() && ctx.state === 'suspended') ctx.resume(); }
+  function noise() { var s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
+  function env(g, t, a, peak, hold, r) {
+    g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + r);
+  }
+
+  function startHum() {
+    if (humOn) return; humOn = true;
+    var g = ctx.createGain(); g.gain.value = 0.05; g.connect(sfx);
+    [[55, 0.6], [110.4, 0.22], [164.7, 0.07]].forEach(function (p) {
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = p[0]; og.gain.value = p[1];
+      o.connect(og); og.connect(g); o.start();
+    });
+    var n = noise(), f = ctx.createBiquadFilter(), ng = ctx.createGain(); f.type = 'lowpass'; f.frequency.value = 220; ng.gain.value = 0.12;
+    n.connect(f); f.connect(ng); ng.connect(g); n.start();
+    var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.012; lfo.connect(lg); lg.connect(g.gain); lfo.start();
+  }
+  // a small hard click, like stone touching glass
+  function tick(good, vol) {
+    if (!ctx || !on.sound) return;
+    var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(good ? 2100 : 1250, t); o.frequency.exponentialRampToValueAtTime(good ? 1500 : 800, t + 0.04);
+    env(g, t, 0.001, (vol || 1) * 0.11, 0.004, 0.06); o.connect(g); g.connect(sfx); g.connect(echoIn); o.start(t); o.stop(t + 0.12);
+    var n = noise(), f = ctx.createBiquadFilter(), ng = ctx.createGain(); f.type = 'highpass'; f.frequency.value = 4000;
+    env(ng, t, 0.001, (vol || 1) * 0.05, 0.002, 0.02); n.connect(f); f.connect(ng); ng.connect(sfx); n.start(t); n.stop(t + 0.05);
+  }
+  function ui() { tick(true, 0.45); }
+  // the clean cut through stone
+  function cut(dur) {
+    if (!ctx || !on.sound) return;
+    dur = dur || 1.1;
+    var t = ctx.currentTime, n = noise(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'bandpass'; f.Q.value = 2.2; f.frequency.setValueAtTime(3600, t); f.frequency.exponentialRampToValueAtTime(900, t + dur);
+    env(g, t, 0.03, 0.22, dur - 0.25, 0.22); n.connect(f); f.connect(g); g.connect(sfx); g.connect(echoIn); n.start(t); n.stop(t + dur + 0.3);
+    var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(190, t); o.frequency.linearRampToValueAtTime(120, t + dur);
+    var of = ctx.createBiquadFilter(); of.type = 'lowpass'; of.frequency.value = 500;
+    env(og, t, 0.05, 0.035, dur - 0.3, 0.2); o.connect(of); of.connect(og); og.connect(sfx); o.start(t); o.stop(t + dur + 0.3);
+  }
+  function thud() {
+    if (!ctx || !on.sound) return;
+    var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.3);
+    env(g, t, 0.004, 0.3, 0.02, 0.5); o.connect(g); g.connect(sfx); g.connect(echoIn); o.start(t); o.stop(t + 0.7);
+    tick(false, 0.8);
+  }
+  // the long airy note while the traveller goes through
+  function air(dur) {
+    if (!ctx || !on.sound) return;
+    dur = dur || 3.6;
+    var t = ctx.currentTime;
+    [[392, 0.5], [587.3, 0.3], [784, 0.16]].forEach(function (p) {
+      var n = noise(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      f.type = 'bandpass'; f.frequency.value = p[0]; f.Q.value = 38;
+      env(g, t, dur * 0.35, p[1] * 0.9, dur * 0.25, dur * 0.6); n.connect(f); f.connect(g); g.connect(sfx); g.connect(echoIn); n.start(t); n.stop(t + dur * 1.3);
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = p[0];
+      env(og, t, dur * 0.4, p[1] * 0.03, dur * 0.2, dur * 0.6); o.connect(og); og.connect(sfx); og.connect(echoIn); o.start(t); o.stop(t + dur * 1.3);
+    });
+  }
+  function chime(n) {
+    if (!ctx || !on.sound) return;
+    var notes = [587.3, 740, 880, 1174.7];
+    for (var i = 0; i <= Math.min(n, 3); i++) (function (i) {
+      var t = ctx.currentTime + i * 0.16, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = notes[i]; env(g, t, 0.01, 0.07, 0.02, 1.2); o.connect(g); g.connect(sfx); g.connect(echoIn); o.start(t); o.stop(t + 1.5);
+    })(i);
+  }
+
+  // music: slow single notes from one scale, long fades, lots of room
+  var SCALE = [146.83, 220, 246.94, 293.66, 329.63, 369.99, 440, 493.88, 587.33];
+  function note(freq, t, len, vol) {
+    var o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq; o2.type = 'triangle'; o2.frequency.value = freq * 2.003;
+    var g2 = ctx.createGain(); g2.gain.value = 0.12;
+    env(g, t, len * 0.35, vol, len * 0.1, len * 0.55);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(music); g.connect(echoIn);
+    o.start(t); o2.start(t); o.stop(t + len + 0.2); o2.stop(t + len + 0.2);
+  }
+  function scheduleMusic(ms) {
+    clearTimeout(musicTimer);
+    musicTimer = setTimeout(function () {
+      if (ctx && on.music && ctx.state === 'running') {
+        var t = ctx.currentTime + 0.05, i = Math.floor(Math.random() * SCALE.length);
+        note(SCALE[i], t, 6 + Math.random() * 4, 0.05);
+        if (Math.random() < 0.55) note(SCALE[(i + 2 + Math.floor(Math.random() * 3)) % SCALE.length], t + 1.2 + Math.random() * 1.5, 5 + Math.random() * 3, 0.035);
+        if (Math.random() < 0.3) note(SCALE[0] / 2, t + 0.4, 9, 0.045);
+      }
+      scheduleMusic(3800 + Math.random() * 3600);
+    }, ms);
+  }
+  function setSound(v) { on.sound = v; if (ctx) sfx.gain.setTargetAtTime(v ? 1 : 0, ctx.currentTime, 0.05); }
+  function setMusic(v) { on.music = v; if (ctx) music.gain.setTargetAtTime(v ? 1 : 0, ctx.currentTime, 0.3); }
+
+  window.AudioFX = { unlock: unlock, tick: tick, ui: ui, cut: cut, thud: thud, air: air, chime: chime, setSound: setSound, setMusic: setMusic, state: on };
+})();
+
+;
+// Passage — the game: scene, controls, the pass, menus, saving.
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  if (!window.THREE) { $('fatal').classList.remove('hidden'); return; }
+  var THREE = window.THREE, G = window.G, SH = window.SHAPES, LV = window.LEVELS, SOL = window.SOLUTIONS || {}, FX = window.AudioFX;
+
+  var HOST_Y = 2.3, OVER_Y = 5.0, START = [2.7, 0];
+  var FINE = [1, 0.1, 0.01, 0.001], FINE_NAME = ['Fine: off', 'Fine ×10', 'Fine ×100', 'Fine ×1000'];
+  var GROW = [0.005, 0.0005, 0.00005, 0.000005];
+  var I4 = [0, 0, 0, 1];
+
+  // ---------- saved progress ----------
+  var SAVE_KEY = 'passage.v1';
+  var save = { levels: {}, notes: {}, sound: true, music: true };
+  try { var raw = JSON.parse(localStorage.getItem(SAVE_KEY)); if (raw && raw.levels) save = Object.assign(save, raw); } catch (e) { }
+  function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { } }
+  if (/[?&]unlock=1/.test(location.search)) save.unlockAll = true;
+
+  // ---------- level facts ----------
+  function refOf(shapeId) {
+    var lv = LV.byShape[shapeId], sol = SOL[shapeId], lit = lv && lv.lit ? lv.lit : null;
+    var mine = sol && sol.mu > 1 + 1e-7 ? sol.mu : null;
+    if (lit && (!mine || lit >= mine - 2e-6)) return { mu: lit, kind: lv.kind };
+    if (mine) return { mu: mine, kind: 'game' };
+    return null;
+  }
+  function statusOf(shapeId) {
+    if (shapeId.indexOf('random:') === 0) return 'random';
+    var lv = LV.byShape[shapeId];
+    return lv ? lv.status : 'solved';
+  }
+  function starsFor(shapeId) {
+    var rec = save.levels[shapeId], ref = refOf(shapeId);
+    if (!rec || !rec.passed || statusOf(shapeId) !== 'solved' || !ref) return 0;
+    var f = (rec.best - 1) / (ref.mu - 1);
+    return f >= 0.9 ? 3 : f >= 0.5 ? 2 : 1;
+  }
+  function pct(mu, digits) {
+    var v = (mu - 1) * 100;
+    if (digits === undefined) digits = Math.abs(v) >= 1 || Math.abs(v) < 1e-9 ? 2 : Math.abs(v) >= 0.1 ? 3 : 4;
+    return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(digits) + '%';
+  }
+  function starText(n) { return '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n); }
+  function chapterOpen(ci) {
+    if (ci === 0 || save.unlockAll) return true;
+    if (ci === 5) return chapterOpen(4);
+    var prev = LV.chapters[ci - 1];
+    if (!chapterOpen(ci - 1)) return false;
+    if (ci === 4) return prev.levels.some(function (l) { return save.levels[l.id] && save.levels[l.id].passed; });
+    var done = prev.levels.filter(function (l) { return save.levels[l.id] && save.levels[l.id].passed; }).length;
+    return done >= Math.ceil(prev.levels.length / 2);
+  }
+
+  // ---------- three.js scene ----------
+  var canvas = $('c');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, preserveDrawingBuffer: /[?&]shots=1/.test(location.search) });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x05070a);
+  var camera = new THREE.PerspectiveCamera(36, 1, 0.3, 90);
+  var helper = new THREE.PerspectiveCamera(36, 1, 0.3, 90);
+  var cam = { yaw: 0, pitch: 0.68, z3: 1, tz: 1, cx: 0, cz: 0, blend: 0, lift: 0 };
+
+  scene.add(new THREE.HemisphereLight(0x223246, 0x93a7ba, 1.0));
+  var topLight = new THREE.DirectionalLight(0xffffff, 1.35); topLight.position.set(0.6, 10, 1.2); scene.add(topLight);
+  var fill = new THREE.DirectionalLight(0x8fa3c0, 0.3); fill.position.set(-4, 3, 8); scene.add(fill);
+
+  // the light table
+  (function () {
+    var cv = document.createElement('canvas'); cv.width = cv.height = 1024;
+    var c = cv.getContext('2d'), g = c.createRadialGradient(512, 512, 0, 512, 512, 512);
+    g.addColorStop(0, '#e2e9ef'); g.addColorStop(0.22, '#cfd9e2'); g.addColorStop(0.45, '#8d9cab'); g.addColorStop(0.72, '#2b343e'); g.addColorStop(1, '#05070a');
+    c.fillStyle = g; c.fillRect(0, 0, 1024, 1024);
+    c.strokeStyle = 'rgba(40,60,80,0.10)'; c.lineWidth = 1;
+    for (var r = 1; r <= 7; r++) { c.beginPath(); c.arc(512, 512, r * 64, 0, 7); c.stroke(); }
+    var tex = new THREE.CanvasTexture(cv);
+    var table = new THREE.Mesh(new THREE.CircleGeometry(8, 96), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+    table.rotation.x = -Math.PI / 2; table.renderOrder = -20; scene.add(table);
+  })();
+
+  // dust in the light
+  var dust = (function () {
+    var n = 140, p = new Float32Array(n * 3);
+    for (var i = 0; i < n; i++) { var a = Math.random() * 7, r = Math.sqrt(Math.random()) * 3.6; p[i * 3] = Math.cos(a) * r; p[i * 3 + 1] = Math.random() * 7; p[i * 3 + 2] = Math.sin(a) * r; }
+    var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    var m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xbfd2e6, size: 0.03, transparent: true, opacity: 0.22, depthWrite: false }));
+    scene.add(m); return m;
+  })();
+
+  // flat shapes drawn on the table
+  function decalMat(color) { return new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, depthTest: false, depthWrite: false, fog: false }); }
+  function Fan(maxTri, mat, order) {
+    this.pos = new Float32Array(maxTri * 9); this.geo = new THREE.BufferGeometry();
+    this.attr = new THREE.BufferAttribute(this.pos, 3); this.attr.setUsage(THREE.DynamicDrawUsage);
+    this.geo.setAttribute('position', this.attr); this.geo.setDrawRange(0, 0);
+    this.mesh = new THREE.Mesh(this.geo, mat); this.mesh.renderOrder = order; this.mesh.frustumCulled = false; scene.add(this.mesh);
+  }
+  Fan.prototype.set = function (P) {
+    var p = this.pos, n = 0;
+    for (var i = 1; i + 1 < P.length && n + 9 <= p.length; i++) {
+      p[n++] = P[0][0]; p[n++] = 0; p[n++] = P[0][1];
+      p[n++] = P[i][0]; p[n++] = 0; p[n++] = P[i][1];
+      p[n++] = P[i + 1][0]; p[n++] = 0; p[n++] = P[i + 1][1];
+    }
+    this.attr.needsUpdate = true; this.geo.setDrawRange(0, n / 3);
+  };
+  // outline of a closed convex shape as a thin band of width w
+  Fan.prototype.setRibbon = function (P, w) {
+    var p = this.pos, n = 0, m = P.length, In = [], Out = [], i;
+    if (m < 3) { this.geo.setDrawRange(0, 0); return; }
+    for (i = 0; i < m; i++) {
+      var a = P[(i + m - 1) % m], b = P[i], c = P[(i + 1) % m];
+      var e1x = b[0] - a[0], e1y = b[1] - a[1], l1 = Math.hypot(e1x, e1y) || 1, e2x = c[0] - b[0], e2y = c[1] - b[1], l2 = Math.hypot(e2x, e2y) || 1;
+      var n1x = e1y / l1, n1y = -e1x / l1, n2x = e2y / l2, n2y = -e2x / l2;
+      var mx = n1x + n2x, my = n1y + n2y, ml = Math.hypot(mx, my) || 1; mx /= ml; my /= ml;
+      var k = (w / 2) / Math.max(0.3, mx * n1x + my * n1y);
+      In.push([b[0] - mx * k, b[1] - my * k]); Out.push([b[0] + mx * k, b[1] + my * k]);
+    }
+    function put(q) { p[n++] = q[0]; p[n++] = 0; p[n++] = q[1]; }
+    for (i = 0; i < m && n + 18 <= p.length; i++) {
+      var j = (i + 1) % m;
+      put(In[i]); put(Out[i]); put(Out[j]); put(In[i]); put(Out[j]); put(In[j]);
+    }
+    this.attr.needsUpdate = true; this.geo.setDrawRange(0, n / 3);
+  };
+  var stripeMat = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 }, uPx: { value: renderer.getPixelRatio() } },
+    vertexShader: 'void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform float uT; uniform float uPx; void main(){ float s = step(0.5, fract((gl_FragCoord.x + gl_FragCoord.y)/(11.0*uPx) + uT*0.7)); float pulse = 0.86 + 0.14*sin(uT*5.0); gl_FragColor = vec4(mix(vec3(0.80,0.20,0.02), vec3(1.0,0.95,0.84), s)*pulse, 1.0); }',
+    side: THREE.DoubleSide, depthTest: false, depthWrite: false
+  });
+  var dHost = new Fan(200, decalMat(0x2a78c2), -12);
+  var dStripe = new Fan(200, stripeMat, -11);
+  var dInside = new Fan(400, decalMat(0xf0a61c), -10);
+  var dHostLine = new Fan(420, decalMat(0x0b2f52), -9);
+  var dTravLine = new Fan(420, decalMat(0x5c3a00), -8);
+  var dKnob = new THREE.Mesh(new THREE.CircleGeometry(1, 28), decalMat(0xf7d58a)); dKnob.rotation.x = -Math.PI / 2; dKnob.renderOrder = -6; scene.add(dKnob);
+  var dKnobRing = new Fan(240, decalMat(0x3a4a5c), -7);
+  var outPts = (function () {
+    var g = new THREE.BufferGeometry(), a = new THREE.BufferAttribute(new Float32Array(600), 3); a.setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('position', a); g.setDrawRange(0, 0);
+    var m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xb81d00, size: 7 * renderer.getPixelRatio(), sizeAttenuation: false, depthTest: false, depthWrite: false, fog: false }));
+    m.renderOrder = -5; m.frustumCulled = false; scene.add(m); return m;
+  })();
+
+  // the two solids
+  var hostMat = new THREE.MeshStandardMaterial({ color: 0x71859b, roughness: 0.36, metalness: 0.22, vertexColors: true });
+  var ringMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.18, vertexColors: true });
+  var plugMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.18, vertexColors: true, transparent: true });
+  var travMat = new THREE.MeshStandardMaterial({ color: 0xf3e2bd, roughness: 0.55, metalness: 0.0, vertexColors: true, transparent: true, opacity: 0.88 });
+  var hostGroup = new THREE.Group(), travGroup = new THREE.Group(), cutGroup = new THREE.Group();
+  scene.add(hostGroup, travGroup, cutGroup);
+  var hostMesh = null, travMesh = null, ringMesh = null, plugMesh = null;
+  var dropLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xc8d8ea, transparent: true, opacity: 0.16, depthWrite: false }));
+  dropLines.frustumCulled = false; scene.add(dropLines);
+  var beam = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xfff1c4, transparent: true, opacity: 0, depthWrite: false }));
+  beam.frustumCulled = false; scene.add(beam);
+
+  function faceGeo(solids, baseCol, cutCol) {
+    var pos = [], nor = [], col = [], k = 0;
+    solids.forEach(function (F) {
+      F.forEach(function (f) {
+        var sh = 0.9 + 0.2 * (((k++ * 2654435761) >>> 0) % 1000) / 1000, c = f.cut ? cutCol : baseCol;
+        for (var i = 1; i + 1 < f.pts.length; i++) [f.pts[0], f.pts[i], f.pts[i + 1]].forEach(function (p) {
+          pos.push(p[0], p[1], p[2]); nor.push(f.n[0], f.n[1], f.n[2]); col.push(c[0] * sh, c[1] * sh, c[2] * sh);
+        });
+      });
+    });
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    return g;
+  }
+  function edgeGeo(shape) {
+    var p = [];
+    shape.hull.edges.forEach(function (e) { p.push.apply(p, shape.verts[e[0]]); p.push.apply(p, shape.verts[e[1]]); });
+    var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return g;
+  }
+  function clearGroup(g) { while (g.children.length) { var c = g.children.pop(); if (c.geometry) c.geometry.dispose(); } }
+  function buildSolids(shape) {
+    clearGroup(hostGroup); clearGroup(travGroup); clearGroup(cutGroup);
+    var F = G.solidFaces(shape.verts, shape.hull, I4), one = [1, 1, 1];
+    hostMesh = new THREE.Mesh(faceGeo([F], one, one), hostMat);
+    travMesh = new THREE.Mesh(faceGeo([F], one, one), travMat);
+    var eg = edgeGeo(shape);
+    hostGroup.add(hostMesh, new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: 0x9fd0ff, transparent: true, opacity: 0.55 })));
+    travGroup.add(travMesh, new THREE.LineSegments(eg.clone(), new THREE.LineBasicMaterial({ color: 0xffc65a, transparent: true, opacity: 0.8 })));
+    var n = shape.verts.length;
+    dropLines.geometry.dispose(); dropLines.geometry = new THREE.BufferGeometry();
+    var a = new THREE.BufferAttribute(new Float32Array(n * 12), 3); a.setUsage(THREE.DynamicDrawUsage);
+    dropLines.geometry.setAttribute('position', a);
+  }
+
+  // ---------- state ----------
+  var S = {
+    screen: 'title', lv: null, shape: null, hq: I4, tq: I4, tx: START[0], tz: 0, s: 1,
+    sel: 'host', fine: 0, table: false, tool: 'turnHost', undo: [], ev: null, busy: false,
+    tut: -1, turned: 0, lastFit: false, lastOut: 0, lastTick: 0, closest: null, attract: true, travY: HOST_Y, anim: null, free: false
+  };
+  var tweens = [];
+  function tween(d, fn, done) { tweens.push({ t: 0, d: d, fn: fn, done: done }); }
+  function ease(k) { return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; }
+  function snap() { return { hq: S.hq.slice(), tq: S.tq.slice(), tx: S.tx, tz: S.tz, s: S.s }; }
+  function pushUndo() { S.undo.push(snap()); if (S.undo.length > 300) S.undo.shift(); $('bUndo').disabled = false; }
+  function undo() {
+    var u = S.undo.pop(); if (!u) return;
+    S.hq = u.hq; S.tq = u.tq; S.tx = u.tx; S.tz = u.tz; S.s = u.s; $('bUndo').disabled = !S.undo.length; refresh();
+  }
+  function liftTarget() {
+    var d = Math.hypot(S.tx, S.tz), t = Math.min(1, Math.max(0, (2.6 - d) / 1.3));
+    return HOST_Y + (OVER_Y - HOST_Y) * t * t * (3 - 2 * t);
+  }
+  function worldPerPx() {
+    var h = canvas.clientHeight || 1;
+    if (S.table) return 2 * camera.position.y * Math.tan(camera.fov * Math.PI / 360) / h;
+    return 0.011;
+  }
+
+  // ---------- one place where everything is recomputed ----------
+  function refresh() {
+    var V = S.shape.verts, ev = S.ev = G.evaluate(V, S.hq, S.tq, S.s, S.tx, S.tz);
+    hostGroup.quaternion.set(S.hq[0], S.hq[1], S.hq[2], S.hq[3]);
+    travGroup.quaternion.set(S.tq[0], S.tq[1], S.tq[2], S.tq[3]);
+    travGroup.scale.setScalar(S.s);
+    drawDecals();
+    if (S.screen !== 'play') return;
+    var st = statusOf(S.shape.id), now = performance.now();
+    if (ev.fits !== S.lastFit) { FX.tick(ev.fits, 1); S.lastFit = ev.fits; S.lastTick = now; }
+    else if (!ev.fits && ev.outCount !== S.lastOut && now - S.lastTick > 70) { FX.tick(ev.outCount < S.lastOut, 0.3); S.lastTick = now; }
+    S.lastOut = ev.outCount;
+    if (S.closest === null || ev.limit > S.closest) S.closest = ev.limit;
+    // status line
+    var txt;
+    if (ev.fits) txt = 'Inside, with room. Thinnest wall of the ring: ' + (ev.clearance * 50).toPrecision(2) + '% of the shape’s width.';
+    else if (ev.outFrac > 1 - 1e-9) txt = 'Slide the amber shadow onto the blue one.';
+    else if (ev.outFrac < 1e-7) txt = 'Touching the edge. Touching does not count.';
+    else txt = (ev.outFrac * 100 < 0.1 ? (ev.outFrac * 100).toPrecision(2) : (ev.outFrac * 100).toFixed(1)) + '% of the amber shadow is sticking out.';
+    $('status').textContent = txt;
+    $('status').className = ev.fits ? 'ok' : '';
+    var rd = '';
+    if (S.table || st === 'impossible' || st === 'claimed' || st === 'open') {
+      rd = ev.limit >= S.s ? 'These angles have room for a traveller up to ' + pct(ev.limit, 4) + '.' : 'At these angles the traveller is ' + ((S.s / ev.limit - 1) * 100).toPrecision(3) + '% too big.';
+      if (st !== 'solved' && st !== 'random' && S.closest < 1) rd += ' Closest so far: ' + ((1 / S.closest - 1) * 100).toPrecision(3) + '% too big.';
+    }
+    $('readout').textContent = rd;
+    var bp = $('bPass');
+    if (st === 'impossible') { bp.disabled = true; bp.textContent = 'No passage exists'; bp.classList.remove('lit'); }
+    else { bp.disabled = !ev.fits || S.busy; bp.textContent = 'Pass through'; bp.classList.toggle('lit', ev.fits && !S.busy); }
+    $('growVal').textContent = 'Size ' + pct(S.s, S.fine >= 2 ? 4 : S.fine === 1 ? 3 : 2);
+    tutorial();
+  }
+  function drawDecals() {
+    var ev = S.ev, w = worldPerPx();
+    // apart = the two shadows do not overlap at all yet: show the traveller's shadow plain, with no warning
+    var apart = ev.inside.length < 3 || G.area2d(ev.inside) < 1e-9;
+    dHost.set(ev.host); dStripe.set(apart ? [] : ev.trav); dInside.set(apart ? ev.trav : ev.inside);
+    dHostLine.setRibbon(ev.host, S.table ? w * 1.6 : 0.022);
+    dTravLine.setRibbon(ev.trav, S.table ? w * 1.6 : 0.022);
+    var a = outPts.geometry.attributes.position, n = 0;
+    if (!ev.fits && !apart) for (var i = 0; i < ev.trav.length && n < 199; i++) {
+      if (G.clearance(ev.edges, [ev.trav[i]]) <= G.EPS_FIT) { a.setXYZ(n++, ev.trav[i][0], 0, ev.trav[i][1]); }
+    }
+    a.needsUpdate = true; outPts.geometry.setDrawRange(0, n);
+    // spin handle: a ring around the traveller's shadow with a knob on it
+    var R = 1.2 * S.s, m = G.qmat(S.tq), ang = Math.atan2(m[6], m[0]);
+    var kr = S.table ? w * 9 : 0.1;
+    dKnob.position.set(S.tx + R * Math.cos(ang), 0, S.tz + R * Math.sin(ang)); dKnob.scale.setScalar(kr);
+    var ring = [];
+    for (var k = 0; k < 40; k++) ring.push([S.tx + R * Math.cos(k / 40 * 6.283185307), S.tz + R * Math.sin(k / 40 * 6.283185307)]);
+    dKnobRing.setRibbon(ring, S.table ? w : 0.012);
+    S.knob = [S.tx + R * Math.cos(ang), S.tz + R * Math.sin(ang), Math.max(kr * 2.2, w * 22)];
+  }
+  function updateDropLines() {
+    var a = dropLines.geometry.attributes.position; if (!a || !S.shape) return;
+    var V = S.shape.verts, n = 0, i, p;
+    var hy = hostGroup.position.y, ty = travGroup.position.y;
+    // only the corners that make the outline of each shadow get a line down to the table
+    var EH = S.ev.edges, ET = G.edgesOf(S.ev.trav);
+    for (i = 0; i < V.length; i++) {
+      p = G.qrot(S.hq, V[i]);
+      if (G.clearance(EH, [[p[0], p[2]]]) > 1e-7) continue;
+      a.setXYZ(n++, p[0], p[1] + hy, p[2]); a.setXYZ(n++, p[0], 0, p[2]);
+    }
+    for (i = 0; i < V.length; i++) {
+      p = G.qrot(S.tq, V[i]); var x = p[0] * S.s + S.tx, z = p[2] * S.s + S.tz;
+      if (G.clearance(ET, [[x, z]]) > 1e-7) continue;
+      a.setXYZ(n++, x, p[1] * S.s + ty, z); a.setXYZ(n++, x, 0, z);
+    }
+    a.needsUpdate = true; dropLines.geometry.setDrawRange(0, n);
+  }
+
+  // ---------- teaching the cube without a tutorial screen ----------
+  var TUT = [
+    'Drag a cube to turn it. Watch its shadow on the table.',
+    'Now drag the amber shadow onto the blue one.',
+    'The amber shadow has to sit completely inside the blue one. Striped parts are sticking out. Two equal squares can never fit, so make the blue shadow bigger: stand the blue cube on one corner.',
+    'A hexagon. Now turn the amber cube until its shadow is a small square, and spin it with the round handle on the table.',
+    'It fits. Press Pass through.'
+  ];
+  function tutorial() {
+    if (S.tut < 0) return;
+    var ev = S.ev, was = S.tut;
+    if (S.tut === 0 && S.turned > 0.6) S.tut = 1;
+    if (S.tut === 1 && Math.hypot(S.tx, S.tz) < 0.6) S.tut = 2;
+    if (S.tut === 2 && ev.host.length === 6 && G.area2d(ev.host) > 2.0) S.tut = 3;
+    if (ev.fits && Math.hypot(S.tx, S.tz) < 1.5) S.tut = 4; else if (S.tut === 4) S.tut = 3;
+    if (S.tut !== was) say(TUT[S.tut], true);
+  }
+  var sayTimer = null;
+  function say(text, stay) {
+    var el = $('prompt'); el.textContent = text; el.classList.add('show');
+    clearTimeout(sayTimer);
+    if (!stay) sayTimer = setTimeout(function () { el.classList.remove('show'); }, 9000);
+  }
+
+  // ---------- screens ----------
+  function show(name) {
+    S.screen = name;
+    ['title', 'select', 'note', 'card'].forEach(function (id) { $(id).classList.toggle('hidden', id !== name); });
+    $('hud').classList.toggle('hidden', name !== 'play' && name !== 'card');
+    $('hud').classList.toggle('dim', name === 'card');
+  }
+  function loadShape(id) {
+    S.shape = SH.get(id); buildSolids(S.shape);
+    S.hq = I4.slice(); S.tq = I4.slice(); S.tx = START[0]; S.tz = START[1]; S.s = 1; S.undo = [];
+    S.closest = null; S.lastFit = false; S.lastOut = 0; S.travY = HOST_Y;
+    hostGroup.position.set(0, HOST_Y, 0); hostGroup.visible = true; cutGroup.visible = false;
+  }
+  function startLevel(shapeId, free, skipNote) {
+    var lv = LV.byShape[shapeId];
+    if (!lv) free = true; // a shape that is in no room can only be free play
+    if (lv && !free && !skipNote && !save.notes[LV.chapters[lv.ch].id]) { showNote(lv.ch, function () { startLevel(shapeId, free, true); }); return; }
+    S.attract = false; S.free = !!free; S.lv = lv || null; S.busy = false; S.anim = null; tweens.length = 0;
+    setTable(false); S.fine = 0; S.sel = 'host'; S.tool = 'turnHost';
+    loadShape(shapeId);
+    var st = statusOf(shapeId), ch = lv ? LV.chapters[lv.ch] : null;
+    $('lvChapter').textContent = free ? 'Free play' : ch.num + ' · ' + ch.title;
+    $('lvName').textContent = S.shape.name;
+    S.tut = (shapeId === 'cube' && !free && !(save.levels.cube && save.levels.cube.passed)) ? 0 : -1; S.turned = 0;
+    show('play'); syncHud(); refresh();
+    if (S.tut === 0) say(TUT[0], true);
+    else if (st === 'random') say('A random shape with no dents. Nobody has looked at this one before.');
+    else say(lv ? lv.line : 'Free play. No stars here, only the shape.', st !== 'solved');
+    $('bUndo').disabled = true;
+  }
+  function syncHud() {
+    var id = S.shape.id, st = statusOf(id), rec = save.levels[id], ref = refOf(id), line = '', stars = '';
+    if (st === 'solved') {
+      stars = starText(starsFor(id));
+      line = 'Your best: ' + (rec && rec.passed ? pct(rec.best) : 'none yet');
+      if (ref) line += ' · ' + (ref.kind === 'proven' ? 'Proven best: ' : ref.kind === 'known' ? 'Best known: ' : 'Best this game found: ') + pct(ref.mu);
+    } else if (st === 'open') line = 'UNSOLVED · nobody knows if a passage exists';
+    else if (st === 'claimed') line = 'REPORTED IMPOSSIBLE in 2026 · proof still under review';
+    else if (st === 'impossible') line = 'PROVEN IMPOSSIBLE · 2025';
+    else line = 'Your best: ' + (S.randBest ? pct(S.randBest) : 'none yet');
+    $('stars').textContent = stars; $('scoreLine').textContent = line;
+    $('scoreLine').className = st === 'solved' || st === 'random' ? '' : 'flag';
+    var canGrow = (st === 'solved' && rec && rec.passed) || S.free || st === 'random';
+    $('growBox').classList.toggle('hidden', !canGrow || st === 'impossible');
+    $('bFine').textContent = FINE_NAME[S.fine]; $('bFine').classList.toggle('on', S.fine > 0);
+    $('bTable').textContent = S.table ? 'Room view' : 'Table view'; $('bTable').classList.toggle('on', S.table);
+    $('tools').classList.toggle('hidden', !S.table);
+    ['turnHost', 'turnTrav', 'slide', 'spin', 'pan'].forEach(function (t) { $('t_' + t).classList.toggle('on', S.tool === t); });
+    $('chipHost').classList.toggle('on', S.sel === 'host'); $('chipTrav').classList.toggle('on', S.sel === 'trav');
+    $('bHint').disabled = st === 'impossible';
+  }
+  var noteNext = null;
+  function showNote(ci, next) {
+    var ch = LV.chapters[ci];
+    $('noteNum').textContent = ch.num; $('noteTitle').textContent = ch.title; $('noteText').textContent = ch.note;
+    noteNext = next; save.notes[ch.id] = 1; persist(); show('note');
+  }
+  function wireIcon(shapeId) {
+    var s = SH.get(shapeId), q = G.qmul(G.qaxis(1, 0, 0, 0.45), G.qaxis(0, 1, 0, 0.55)), P = s.verts.map(function (v) { return G.qrot(q, v); });
+    var d = s.hull.edges.map(function (e) { return 'M' + P[e[0]][0].toFixed(3) + ' ' + (-P[e[0]][1]).toFixed(3) + 'L' + P[e[1]][0].toFixed(3) + ' ' + (-P[e[1]][1]).toFixed(3); }).join('');
+    return '<svg viewBox="-1.1 -1.1 2.2 2.2" aria-hidden="true"><path d="' + d + '" fill="none" stroke="currentColor" stroke-width="' + (s.verts.length > 40 ? 0.018 : 0.035) + '" stroke-linecap="round"/></svg>';
+  }
+  function tile(shapeId, free, locked) {
+    var st = statusOf(shapeId), rec = save.levels[shapeId], b = document.createElement('button');
+    b.className = 'tile' + (locked ? ' locked' : '') + (st !== 'solved' ? ' special' : '');
+    var tag = st === 'open' ? 'unsolved' : st === 'claimed' ? 'reported impossible' : st === 'impossible' ? 'cannot be won' : free ? (rec && rec.passed ? pct(rec.best) : '') : starText(starsFor(shapeId));
+    var sub = st === 'solved' && !free && rec && rec.passed ? pct(rec.best) : '';
+    b.innerHTML = wireIcon(shapeId) + '<span class="tn">' + SH.get(shapeId).name + '</span><span class="tt">' + tag + '</span>' + (sub ? '<span class="ts">' + sub + '</span>' : '');
+    b.disabled = !!locked;
+    b.addEventListener('click', function () { FX.unlock(); FX.ui(); startLevel(shapeId, free); });
+    return b;
+  }
+  function buildSelect() {
+    var root = $('rooms'); root.innerHTML = '';
+    LV.chapters.forEach(function (ch, ci) {
+      var open = chapterOpen(ci), sec = document.createElement('section');
+      sec.className = 'room' + (open ? '' : ' closed');
+      var h = document.createElement('div'); h.className = 'roomHead';
+      h.innerHTML = '<span class="rn">' + ch.num + '</span><span class="rt">' + ch.title + '</span>';
+      if (open && save.notes[ch.id]) {
+        var nb = document.createElement('button'); nb.className = 'link'; nb.textContent = 'read the note';
+        nb.addEventListener('click', function () { showNote(ci, function () { openSelect(); }); }); h.appendChild(nb);
+      } else if (!open) { var lk = document.createElement('span'); lk.className = 'lock'; lk.textContent = ci === 5 ? 'opens with room 5' : ci === 4 ? 'pass one shape in room 4 to open' : 'pass half of the room before to open'; h.appendChild(lk); }
+      sec.appendChild(h);
+      var row = document.createElement('div'); row.className = 'tiles';
+      ch.levels.forEach(function (l) { row.appendChild(tile(l.shape, false, !open)); });
+      sec.appendChild(row); root.appendChild(sec);
+    });
+    var fp = $('freeTiles'); fp.innerHTML = '';
+    SH.ids.forEach(function (id) { fp.appendChild(tile(id, true, false)); });
+  }
+  function openSelect() { S.attract = true; buildSelect(); show('select'); }
+  function nextLevel() {
+    var lv = S.lv; if (!lv || S.free) { openSelect(); return; }
+    var ch = LV.chapters[lv.ch];
+    if (lv.idx + 1 < ch.levels.length) return startLevel(ch.levels[lv.idx + 1].shape);
+    if (lv.ch + 1 < LV.chapters.length && chapterOpen(lv.ch + 1)) return startLevel(LV.chapters[lv.ch + 1].levels[0].shape);
+    openSelect();
+  }
+  function firstUnfinished() {
+    for (var c = 0; c < LV.chapters.length; c++) {
+      if (!chapterOpen(c)) break;
+      for (var i = 0; i < LV.chapters[c].levels.length; i++) {
+        var l = LV.chapters[c].levels[i];
+        if (l.status === 'solved' && !(save.levels[l.id] && save.levels[l.id].passed)) return l.shape;
+      }
+    }
+    return null;
+  }
+
+  // ---------- the pass ----------
+  function doPass() {
+    if (S.busy || !S.ev || !S.ev.fits || statusOf(S.shape.id) === 'impossible') return;
+    S.busy = true; setTable(false); $('bPass').disabled = true; $('bPass').classList.remove('lit');
+    $('prompt').classList.remove('show');
+    var ev = S.ev, shape = S.shape, passS = S.s, limit = ev.limit;
+    var cut = G.cutTunnel(G.solidFaces(shape.verts, shape.hull, S.hq), ev.trav);
+    clearGroup(cutGroup);
+    var stone = [0.44, 0.52, 0.61], fresh = [0.80, 0.86, 0.92];
+    ringMesh = new THREE.Mesh(faceGeo(cut.ring, stone, fresh), ringMat);
+    plugMesh = new THREE.Mesh(faceGeo([cut.plug], stone, fresh), plugMat);
+    plugMat.opacity = 1; cutGroup.add(ringMesh, plugMesh); cutGroup.visible = false;
+    var plugLow = Infinity; cut.plug.forEach(function (f) { f.pts.forEach(function (p) { plugLow = Math.min(plugLow, p[1]); }); });
+    // the outline of light where the cut will go
+    var bp = [];
+    ev.trav.forEach(function (p, i) { var q = ev.trav[(i + 1) % ev.trav.length]; bp.push(p[0], 0, p[1], p[0], 7.4, p[1], p[0], 7.4, p[1], q[0], 7.4, q[1]); });
+    beam.geometry.dispose(); beam.geometry = new THREE.BufferGeometry(); beam.geometry.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3));
+    var HY = 3.6, TY0 = 6.4, TY1 = 1.02 * passS + 0.25, t = 0, did = {};
+    var y0 = S.travY;
+    S.anim = function (dt) {
+      t += dt;
+      var a = ease(Math.min(1, t / 1.1));
+      cam.lift = a;
+      var hy = HOST_Y + (HY - HOST_Y) * a;
+      hostGroup.position.y = hy; cutGroup.position.y = hy;
+      S.travY = y0 + (TY0 - y0) * a;
+      beam.material.opacity = t < 1.1 ? 0.5 * a : Math.max(0, 0.5 - (t - 1.1) * 0.4);
+      if (t > 0.1 && !did.cut) { did.cut = 1; FX.cut(1.0); }
+      if (t > 1.1 && !did.swap) { did.swap = 1; hostGroup.visible = false; cutGroup.visible = true; plugMesh.position.y = 0; }
+      if (t > 1.1) {
+        var ft = t - 1.1, py = -0.5 * 14 * ft * ft, floor = -hy - plugLow + 0.002;
+        if (py <= floor) { py = floor; if (!did.thud) { did.thud = 1; did.thudT = t; FX.thud(); } }
+        plugMesh.position.y = py;
+        if (did.thud) plugMat.opacity = Math.max(0, 1 - (t - did.thudT) / 0.7);
+        if (did.thud && plugMat.opacity <= 0) plugMesh.visible = false;
+      }
+      if (t > 2.3 && !did.air) { did.air = 1; FX.air(3.6); }
+      if (t > 2.3) { var k = ease(Math.min(1, (t - 2.3) / 3.4)); S.travY = TY0 + (TY1 - TY0) * k; }
+      if (t > 6.1) { S.anim = null; passed(passS, limit); }
+    };
+  }
+  function passed(passS, limit) {
+    var id = S.shape.id, st = statusOf(id), ref = refOf(id);
+    if (st === 'open' || st === 'claimed') return possiblePassage(passS, limit);
+    var rec = st === 'random' ? { best: 0 } : (save.levels[id] || (save.levels[id] = { best: 0, passed: false })), isBest = false;
+    if (st === 'random') { if (!S.randBest || passS > S.randBest) { S.randBest = passS; isBest = true; } }
+    else { if (!rec.passed || passS > rec.best) { rec.best = passS; isBest = true; } rec.passed = true; persist(); }
+    var stars = starsFor(id);
+    $('cardTitle').textContent = 'Through.';
+    var h = '<p>' + (passS <= 1 ? 'A twin of exactly the same size went through, and the ring is still in one piece.' : 'The traveller was <b>' + pct(passS) + '</b> bigger than the host, and the ring is still in one piece.') + '</p>';
+    h += '<p>At these exact angles there was room for a traveller up to <b>' + pct(limit) + '</b>.</p>';
+    if (st === 'solved' && !S.free) h += '<p class="big">' + starText(stars) + '</p>';
+    if (ref && st === 'solved') h += '<p class="small">' + (ref.kind === 'proven' ? 'Proven best possible' : ref.kind === 'known' ? 'Best known' : 'Best this game’s own search found') + ': ' + pct(ref.mu) + '. Your best: ' + pct(st === 'random' ? S.randBest : rec.best) + '.</p>';
+    else h += '<p class="small">Your best: ' + pct(st === 'random' ? S.randBest : rec.best) + '.</p>';
+    if (ref && st === 'solved' && rec.best > ref.mu + 1e-7) h += '<p class="small">That is past the best figure this game knows of. Save your angles and have someone check them.</p>';
+    $('cardBody').innerHTML = h;
+    $('cardSave').classList.toggle('hidden', !(ref && st === 'solved' && rec.best > ref.mu + 1e-7));
+    $('cardNext').classList.toggle('hidden', S.free || st === 'random');
+    $('cardAgain').textContent = 'Try it bigger';
+    S.lastPass = passData(passS, limit);
+    if (isBest) FX.chime(st === 'solved' ? stars : 1);
+    syncHud(); show('card');
+  }
+  function passData(passS, limit) {
+    var ev = S.ev;
+    return {
+      game: 'Passage', note: 'Computed in double-precision floating point. Not a proof. Check with exact arithmetic.',
+      shape: S.shape.id, shapeName: S.shape.name, date: new Date().toISOString(),
+      convention: 'Corners v are turned by the quaternion [x,y,z,w], light falls along -y, shadow point = (x, z). Traveller shadow = slide + scale * (x, z).',
+      hostQuaternion: S.hq, hostMatrix: G.qmat(S.hq), travellerQuaternion: S.tq, travellerMatrix: G.qmat(S.tq),
+      slide: [S.tx, S.tz], scale: passS, smallestGap: ev.clearance, scaleLimitAtThisPose: limit, fitThreshold: G.EPS_FIT,
+      corners: S.shape.verts
+    };
+  }
+  function possiblePassage(passS, limit) {
+    S.lastPass = passData(passS, limit);
+    $('cardTitle').textContent = 'A possible passage';
+    var d = S.lastPass, f = function (a) { return a.map(function (x) { return x.toFixed(9); }).join(', '); };
+    $('cardBody').innerHTML = '<p>By this game’s arithmetic the shadow fits. That is <b>not a discovery</b>. A fit on this shape would be extremely thin, and rounding errors in the numbers can fake one.</p>' +
+      '<p>Save the position and let someone check it with exact arithmetic.</p>' +
+      '<pre>host turn      [' + f(d.hostQuaternion) + ']\ntraveller turn [' + f(d.travellerQuaternion) + ']\nslide          [' + f(d.slide) + ']\nsize           ' + d.scale.toFixed(12) + '\nsmallest gap   ' + d.smallestGap.toExponential(6) + '</pre>';
+    $('cardSave').classList.remove('hidden'); $('cardNext').classList.add('hidden'); $('cardAgain').textContent = 'Keep looking';
+    show('card');
+  }
+  function saveFile() {
+    if (!S.lastPass) return;
+    var blob = new Blob([JSON.stringify(S.lastPass, null, 2)], { type: 'application/json' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'passage-' + S.lastPass.shape + '-' + Date.now() + '.json';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function afterPass() {
+    cutGroup.visible = false; hostGroup.visible = true; if (plugMesh) plugMesh.visible = true;
+    hostGroup.position.y = HOST_Y; cam.lift = 0; beam.material.opacity = 0; S.busy = false; S.travY = liftTarget();
+    show('play'); syncHud(); refresh();
+  }
+
+  // ---------- hint ----------
+  function turnHostTo(q, msg) {
+    pushUndo();
+    var from = new THREE.Quaternion(S.hq[0], S.hq[1], S.hq[2], S.hq[3]), to = new THREE.Quaternion(q[0], q[1], q[2], q[3]), cur = new THREE.Quaternion();
+    S.busy = true;
+    tween(0.9, function (k) { cur.copy(from).slerp(to, ease(k)); S.hq = [cur.x, cur.y, cur.z, cur.w]; refresh(); }, function () { S.busy = false; refresh(); say(msg); });
+  }
+  function hint() {
+    if (S.busy) return;
+    var id = S.shape.id, st = statusOf(id), sol = SOL[id];
+    if (st === 'open') return say('There is no hint. Nobody knows a good angle for this shape, or whether one exists.');
+    if (st === 'claimed') return say('There is no hint. A 2026 computer proof reports that no angle works.');
+    if (st === 'impossible') return;
+    if (sol && sol.mu > 1 + 1e-7) return turnHostTo(sol.hq, 'The host is turned to a good angle. The traveller is yours to find.');
+    // a shape nobody has solved for us: search right now, a little at a time
+    say('Searching for a good angle…', true); S.busy = true;
+    var rng = G.mulberry32(Date.now() & 0xffff), sym = G.isCentrallySymmetric(S.shape.verts), best = null, t0 = performance.now(), V = S.shape.verts;
+    (function step() {
+      var t1 = performance.now();
+      while (performance.now() - t1 < 30) { var r = G.searchOnce(V, rng, sym, null, 0.35, 160); if (!best || r.mu > best.mu) best = r; }
+      if (performance.now() - t0 < 1800 && !(best.mu > 1.01)) return setTimeout(step, 0);
+      S.busy = false;
+      if (best.mu > 1 + 1e-6) turnHostTo(best.hq, 'The host is turned to an angle where a passage exists. The traveller is yours to find.');
+      else { refresh(); say('A quick search found no passage. That proves nothing either way.'); }
+    })();
+  }
+
+  // ---------- views ----------
+  function tableBase() {
+    var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), half = 1.75, t = Math.tan(camera.fov * Math.PI / 360);
+    return half / (t * Math.min(1, a));
+  }
+  function fitTableView() {
+    var ev = S.ev, pts = ev.host.concat(ev.trav), x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    pts.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); });
+    cam.cx = (x0 + x1) / 2; cam.cz = (z0 + z1) / 2;
+    var a = canvas.clientWidth / Math.max(1, canvas.clientHeight), t = Math.tan(camera.fov * Math.PI / 360);
+    // leave room for the bars at the top and bottom of the screen
+    var H = canvas.clientHeight || 1, bot = S.screen === 'play' ? document.querySelector('.bottom').offsetHeight : 0, top = 64;
+    var usable = Math.max(0.3, (H - bot - top) / H);
+    var need = Math.max((z1 - z0) / 2 * 1.12 / usable, (x1 - x0) / 2 * 1.15 / a) / t;
+    cam.tz = tableBase() / need;
+    cam.cz += (2 * need * t / H) * (bot - top) / 2;
+  }
+  // jump the table view to the corner of the amber shadow that is closest to (or furthest past) the blue outline
+  function tightSpot() {
+    var ev = S.ev, best = Infinity, at = null;
+    ev.trav.forEach(function (p) { var c = G.clearance(ev.edges, [p]); if (c < best) { best = c; at = p; } });
+    if (!at) return;
+    var t = Math.tan(camera.fov * Math.PI / 360), half = Math.min(1.2, Math.max(Math.abs(best) * 7, 0.004));
+    cam.cx = at[0]; cam.cz = at[1]; cam.tz = Math.min(20000, tableBase() / (half / t));
+  }
+  function setTable(on) {
+    if (S.table === on) return;
+    S.table = on; cam.blend = 0;
+    if (on && S.ev) fitTableView();
+    if (S.screen === 'play') { syncHud(); refresh(); }
+  }
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false); canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  var gp = new THREE.Vector3(), gt = new THREE.Vector3();
+  function updateCamera(dt) {
+    var solidsOn = !S.table;
+    hostGroup.visible = solidsOn && !cutGroup.visible; travGroup.visible = solidsOn; dropLines.visible = solidsOn; dust.visible = solidsOn;
+    if (S.busy && cutGroup.visible) hostGroup.visible = false;
+    if (S.table) {
+      var h = tableBase() / cam.tz;
+      gp.set(cam.cx, h, cam.cz); helper.position.copy(gp); helper.up.set(0, 0, -1); helper.lookAt(cam.cx, 0, cam.cz);
+    } else {
+      var vf = camera.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * camera.aspect);
+      var dist = Math.max(3.55 / Math.sin(vf), 3.3 / Math.sin(hf)) * cam.z3 * (1 + 0.22 * cam.lift);
+      gt.set(0.9 * (1 - cam.lift), 2.3 + 0.9 * cam.lift, 0);
+      if (S.attract) { gt.set(0.9, 1.1, 0); dist *= 1.12; }
+      gp.set(gt.x + dist * Math.sin(cam.yaw) * Math.cos(cam.pitch), gt.y + dist * Math.sin(cam.pitch), gt.z + dist * Math.cos(cam.yaw) * Math.cos(cam.pitch));
+      helper.position.copy(gp); helper.up.set(0, 1, 0); helper.lookAt(gt);
+    }
+    cam.blend = Math.min(1, cam.blend + dt * 1.6);
+    var k = S.table && cam.blend >= 1 ? 1 : 1 - Math.exp(-dt * 9);
+    camera.position.lerp(gp, k); camera.quaternion.slerp(helper.quaternion, k);
+    if (S.table) { camera.near = Math.max(1e-5, camera.position.y * 0.02); camera.far = camera.position.y * 6 + 5; }
+    else { camera.near = 0.3; camera.far = 90; }
+    camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+  }
+
+  // ---------- pointer, touch and keys ----------
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), pointers = {}, drag = null, gest = null;
+  function setRay(x, y) {
+    var r = canvas.getBoundingClientRect();
+    ndc.set((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1)); ray.setFromCamera(ndc, camera);
+  }
+  function tablePoint(x, y) {
+    setRay(x, y); var o = ray.ray.origin, d = ray.ray.direction;
+    if (Math.abs(d.y) < 1e-12) return null;
+    var t = -o.y / d.y; return t > 0 ? [o.x + d.x * t, o.z + d.z * t] : null;
+  }
+  function inside(P, pt, margin) { return P.length >= 3 && G.clearance(G.edgesOf(P), [pt]) > -margin; }
+  function pick(x, y, button) {
+    if (S.table) {
+      if (button === 2 || button === 1) return { kind: 'pan' };
+      return { kind: S.tool };
+    }
+    setRay(x, y);
+    var hit = ray.intersectObjects([hostMesh, travMesh])[0];
+    if (hit) return { kind: hit.object === hostMesh ? 'turnHost' : 'turnTrav' };
+    var tp = tablePoint(x, y);
+    if (tp) {
+      if (Math.hypot(tp[0] - S.knob[0], tp[1] - S.knob[1]) < S.knob[2]) return { kind: 'spinKnob' };
+      if (inside(S.ev.trav, tp, 0.1)) return { kind: 'slide' };
+    }
+    return { kind: 'orbit' };
+  }
+  function turn(who, dx, dy) {
+    var e = camera.matrixWorld.elements, k = 0.0075 * FINE[S.fine];
+    var dq = G.qmul(G.qaxis(e[4], e[5], e[6], dx * k), G.qaxis(e[0], e[1], e[2], dy * k));
+    if (who === 'host') S.hq = G.qnorm(G.qmul(dq, S.hq)); else S.tq = G.qnorm(G.qmul(dq, S.tq));
+    S.turned += Math.hypot(dx, dy) * k;
+  }
+  function spin(da) { S.tq = G.qnorm(G.qmul(G.qaxis(0, 1, 0, -da), S.tq)); }
+  function slide(dx, dz) {
+    S.tx += dx; S.tz += dz;
+    var r = Math.hypot(S.tx, S.tz); if (r > 4.6) { S.tx *= 4.6 / r; S.tz *= 4.6 / r; }
+  }
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  canvas.addEventListener('pointerdown', function (e) {
+    if (S.screen !== 'play' || S.busy) return;
+    FX.unlock();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(pointers);
+    if (ids.length === 2) {
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      gest = { d: Math.hypot(a.x - b.x, a.y - b.y), a: Math.atan2(b.y - a.y, b.x - a.x), cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, pushed: false };
+      drag = null; return;
+    }
+    var p = pick(e.clientX, e.clientY, e.button);
+    drag = { kind: p.kind, id: e.pointerId, x: e.clientX, y: e.clientY, pushed: false, tp: tablePoint(e.clientX, e.clientY) };
+    if (p.kind === 'turnHost') S.sel = 'host'; if (p.kind === 'turnTrav') S.sel = 'trav';
+    if (p.kind === 'spinKnob') drag.ang = Math.atan2(drag.tp[1] - S.tz, drag.tp[0] - S.tx);
+    syncHud();
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!pointers[e.pointerId]) return;
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (gest) {
+      var ids = Object.keys(pointers); if (ids.length < 2) return;
+      var a = pointers[ids[0]], b = pointers[ids[1]];
+      var d = Math.hypot(a.x - b.x, a.y - b.y), an = Math.atan2(b.y - a.y, b.x - a.x), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      if (S.table) {
+        var w = worldPerPx(); cam.cx -= (cx - gest.cx) * w; cam.cz -= (cy - gest.cy) * w;
+        zoomAt(cx, cy, d / Math.max(1, gest.d));
+      } else {
+        cam.z3 = Math.min(1.7, Math.max(0.5, cam.z3 * gest.d / Math.max(1, d)));
+        var da = an - gest.a; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+        if (Math.abs(da) > 0) { if (!gest.pushed) { pushUndo(); gest.pushed = true; } spin(da * FINE[S.fine]); }
+      }
+      gest.d = d; gest.a = an; gest.cx = cx; gest.cy = cy; refresh(); return;
+    }
+    if (!drag || drag.id !== e.pointerId) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (!dx && !dy) return;
+    drag.x = e.clientX; drag.y = e.clientY;
+    var k = drag.kind, changes = k !== 'orbit' && k !== 'pan';
+    if (changes && !drag.pushed) { pushUndo(); drag.pushed = true; }
+    if (k === 'turnHost') turn('host', dx, dy);
+    else if (k === 'turnTrav') turn('trav', dx, dy);
+    else if (k === 'slide') {
+      var tp = tablePoint(e.clientX, e.clientY);
+      if (tp && drag.tp) slide((tp[0] - drag.tp[0]) * FINE[S.fine], (tp[1] - drag.tp[1]) * FINE[S.fine]);
+      drag.tp = tp;
+    } else if (k === 'spin') spin(dx * 0.0075 * FINE[S.fine]);
+    else if (k === 'spinKnob') {
+      var tq = tablePoint(e.clientX, e.clientY);
+      if (tq) { var an2 = Math.atan2(tq[1] - S.tz, tq[0] - S.tx), d2 = an2 - drag.ang; if (d2 > Math.PI) d2 -= 2 * Math.PI; if (d2 < -Math.PI) d2 += 2 * Math.PI; spin(d2 * FINE[S.fine]); drag.ang = an2; }
+    } else if (k === 'orbit') { cam.yaw -= dx * 0.006; cam.pitch = Math.min(1.35, Math.max(0.2, cam.pitch + dy * 0.005)); }
+    else if (k === 'pan') { var w2 = worldPerPx(); cam.cx -= dx * w2; cam.cz -= dy * w2; }
+    refresh();
+  });
+  function endPointer(e) {
+    delete pointers[e.pointerId];
+    if (Object.keys(pointers).length < 2) gest = null;
+    if (drag && drag.id === e.pointerId) drag = null;
+  }
+  window.addEventListener('pointerup', endPointer); window.addEventListener('pointercancel', endPointer);
+  function zoomAt(x, y, f) {
+    var before = tablePoint(x, y), z = Math.min(20000, Math.max(0.35, cam.tz * f));
+    if (before) { var r = cam.tz / z; cam.cx = before[0] + (cam.cx - before[0]) * r; cam.cz = before[1] + (cam.cz - before[1]) * r; }
+    cam.tz = z;
+  }
+  canvas.addEventListener('wheel', function (e) {
+    if (S.screen !== 'play') return; e.preventDefault();
+    var f = Math.exp(-e.deltaY * 0.0015);
+    if (S.table) { zoomAt(e.clientX, e.clientY, f); updateCamera(0); refresh(); }
+    else cam.z3 = Math.min(1.7, Math.max(0.5, cam.z3 / f));
+  }, { passive: false });
+  canvas.addEventListener('dblclick', function () { if (S.table && S.screen === 'play') { fitTableView(); refresh(); } });
+
+  var keyUndoAt = 0;
+  function keyAct(fn) { if (S.busy) return; var n = performance.now(); if (n - keyUndoAt > 700) pushUndo(); keyUndoAt = n; fn(); refresh(); }
+  window.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    if (S.screen === 'note' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); return $('noteGo').click(); }
+    if (S.screen === 'card' && e.key === 'Enter') { e.preventDefault(); return $('cardAgain').click(); }
+    if (S.screen !== 'play') return;
+    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key, px = 22, sl = 0.04 * FINE[S.fine], who = S.sel;
+    if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); return undo(); }
+    if (e.ctrlKey || e.metaKey) return;
+    var used = true;
+    if (k === 'ArrowLeft') keyAct(function () { turn(who, -px, 0); });
+    else if (k === 'ArrowRight') keyAct(function () { turn(who, px, 0); });
+    else if (k === 'ArrowUp') keyAct(function () { turn(who, 0, -px); });
+    else if (k === 'ArrowDown') keyAct(function () { turn(who, 0, px); });
+    else if (k === 'q') keyAct(function () { spin(-0.05 * FINE[S.fine]); });
+    else if (k === 'e') keyAct(function () { spin(0.05 * FINE[S.fine]); });
+    else if (k === 'a') keyAct(function () { slide(-sl, 0); });
+    else if (k === 'd') keyAct(function () { slide(sl, 0); });
+    else if (k === 'w') keyAct(function () { slide(0, -sl); });
+    else if (k === 's') keyAct(function () { slide(0, sl); });
+    else if (k === 'Tab') { S.sel = S.sel === 'host' ? 'trav' : 'host'; syncHud(); }
+    else if (k === 'z') undo();
+    else if (k === 'f') $('bFine').click();
+    else if (k === 't') $('bTable').click();
+    else if (k === 'h') hint();
+    else if (k === '=' || k === '+') grow(1);
+    else if (k === '-' || k === '_') grow(-1);
+    else if (k === 'Enter' || k === ' ') doPass();
+    else if (k === 'Escape') openSelect();
+    else used = false;
+    if (used) e.preventDefault();
+  });
+
+  function grow(dir) {
+    if (S.busy || $('growBox').classList.contains('hidden')) return;
+    pushUndo(); S.s = Math.max(1, Math.min(1.6, S.s + dir * GROW[S.fine]));
+    if (Math.abs(S.s - 1) < 1e-12) S.s = 1; refresh();
+  }
+  function holdable(el, fn) {
+    var t1 = null, t2 = null;
+    function stop() { clearTimeout(t1); clearInterval(t2); }
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); FX.unlock(); fn(); stop(); t1 = setTimeout(function () { t2 = setInterval(fn, 55); }, 380); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (n) { el.addEventListener(n, stop); });
+  }
+  function on(id, fn) { $(id).addEventListener('click', function (e) { FX.unlock(); FX.ui(); fn(e); }); }
+
+  on('bBegin', function () { var f = firstUnfinished(); if (f) startLevel(f); else openSelect(); });
+  on('bRooms', openSelect); on('bFree', function () { openSelect(); $('freeHead').scrollIntoView(); });
+  on('selBack', function () { S.attract = true; show('title'); });
+  on('bBack', openSelect);
+  on('noteGo', function () { var n = noteNext; noteNext = null; if (n) n(); else openSelect(); });
+  on('bUndo', undo);
+  on('bResetH', function () { if (S.busy) return; pushUndo(); S.hq = I4.slice(); refresh(); });
+  on('bResetT', function () { if (S.busy) return; pushUndo(); S.tq = I4.slice(); S.tx = START[0]; S.tz = START[1]; refresh(); });
+  on('bHint', hint);
+  on('bFine', function () { S.fine = (S.fine + 1) % FINE.length; syncHud(); refresh(); });
+  on('bTable', function () { if (S.busy) return; setTable(!S.table); });
+  on('bFit', function () { fitTableView(); refresh(); });
+  on('bTight', function () { tightSpot(); refresh(); });
+  on('chipHost', function () { S.sel = 'host'; if (S.table) S.tool = 'turnHost'; syncHud(); });
+  on('chipTrav', function () { S.sel = 'trav'; if (S.table) S.tool = 'turnTrav'; syncHud(); });
+  ['turnHost', 'turnTrav', 'slide', 'spin', 'pan'].forEach(function (t) {
+    on('t_' + t, function () { S.tool = t; if (t === 'turnHost') S.sel = 'host'; if (t === 'turnTrav') S.sel = 'trav'; syncHud(); });
+  });
+  holdable($('bSpinL'), function () { keyAct(function () { spin(-0.05 * FINE[S.fine]); }); });
+  holdable($('bSpinR'), function () { keyAct(function () { spin(0.05 * FINE[S.fine]); }); });
+  holdable($('bGrowM'), function () { grow(-1); });
+  holdable($('bGrowP'), function () { grow(1); });
+  on('bPass', doPass);
+  on('cardAgain', afterPass);
+  on('cardNext', function () { afterPass(); nextLevel(); });
+  on('cardRooms', function () { afterPass(); openSelect(); });
+  on('cardSave', saveFile);
+  on('bRandom', function () {
+    var n = +$('randN').value, seed = Math.floor(Math.random() * 90000) + 10000;
+    S.randBest = 0; startLevel('random:' + seed + ':' + n, true);
+  });
+  $('randN').addEventListener('input', function () { $('randNv').textContent = $('randN').value; });
+  function syncAudio() {
+    $('bSound').textContent = save.sound ? 'Sound on' : 'Sound off'; $('bMusic').textContent = save.music ? 'Music on' : 'Music off';
+    $('bSound').classList.toggle('off', !save.sound); $('bMusic').classList.toggle('off', !save.music);
+    FX.setSound(save.sound); FX.setMusic(save.music);
+  }
+  $('bSound').addEventListener('click', function () { save.sound = !save.sound; persist(); FX.unlock(); syncAudio(); });
+  $('bMusic').addEventListener('click', function () { save.music = !save.music; persist(); FX.unlock(); syncAudio(); });
+  FX.state.sound = save.sound; FX.state.music = save.music; syncAudio();
+  document.addEventListener('pointerdown', function () { FX.unlock(); }, { once: true });
+
+  // ---------- frame loop ----------
+  var last = performance.now(), time = 0;
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now; time += dt;
+    for (var i = tweens.length - 1; i >= 0; i--) {
+      var tw = tweens[i]; tw.t += dt; var k = Math.min(1, tw.t / tw.d); tw.fn(k);
+      if (k >= 1) { tweens.splice(i, 1); if (tw.done) tw.done(); }
+    }
+    if (S.attract && S.shape) {
+      S.hq = G.qnorm(G.qmul(G.qmul(G.qaxis(0, 1, 0, dt * 0.16), G.qaxis(1, 0, 0.3, dt * 0.11)), S.hq));
+      S.tq = G.qnorm(G.qmul(G.qaxis(0.2, 1, 0, -dt * 0.09), S.tq));
+      S.tx = 1.25 + 0.9 * Math.sin(time * 0.13); S.tz = 0.15 * Math.sin(time * 0.21);
+      refresh();
+    }
+    if (S.anim) S.anim(dt);
+    else if (S.shape) { var ty = liftTarget(); S.travY += (ty - S.travY) * (1 - Math.exp(-dt * 7)); }
+    travGroup.position.set(S.tx, S.travY, S.tz);
+    stripeMat.uniforms.uT.value = time;
+    var wBefore = S.table ? worldPerPx() : 0;
+    updateCamera(dt);
+    if (S.table && S.ev && Math.abs(worldPerPx() - wBefore) > wBefore * 1e-3) drawDecals();
+    updateDropLines();
+    dust.rotation.y = time * 0.01;
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- start ----------
+  resize();
+  loadShape('cube'); S.attract = true; refresh();
+  $('bBegin').textContent = Object.keys(save.levels).length ? 'Continue' : 'Begin';
+  show('title');
+  camera.position.set(1.3, 9, 11); updateCamera(1);
+  requestAnimationFrame(frame);
+
+  // for tests and the curious
+  window.PASSAGE = {
+    S: S, G: G, cam: cam, save: save, LV: LV, tightSpot: tightSpot, start: startLevel, refresh: refresh, pass: doPass, hint: hint, setTable: setTable,
+    set: function (p) { ['hq', 'tq', 'tx', 'tz', 's'].forEach(function (k) { if (p[k] !== undefined) S[k] = p[k]; }); refresh(); return S.ev; },
+    solution: function (id) { return SOL[id || S.shape.id]; },
+    screenOf: function (wx, wy, wz) { var v = new THREE.Vector3(wx, wy, wz).project(camera), r = canvas.getBoundingClientRect(); return [(v.x + 1) / 2 * r.width + r.left, (1 - v.y) / 2 * r.height + r.top]; }
+  };
+})();
+</script>
+</body>
+</html>

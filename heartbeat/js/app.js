@@ -37,7 +37,11 @@
     document.title = I18N.plain('title');
     var els = document.querySelectorAll('[data-t]');
     for (var i = 0; i < els.length; i++) els[i].innerHTML = H(els[i].getAttribute('data-t'));
-    $('btnLang').textContent = S.lang === 'ar' ? 'English' : 'العربية';
+    $('langText').textContent = S.lang === 'ar' ? 'English' : 'العربية';
+    splitItems($('hint')); splitItems(document.querySelector('.disclaimer .keys'));
+    $('btnPrompt').title = I18N.plain('promptTitle'); $('btnSimplify').title = I18N.plain('simplifies');
+    $('copyText').textContent = I18N.plain('copy');
+    updateTheme();
     // condition tabs
     $('conds').innerHTML = CONDS.map(function (c) { return '<button data-c="' + c + '" aria-pressed="' + (c === S.cond) + '">' + H('condShort.' + c) + '</button>'; }).join('');
     $('viewSeg').innerHTML = ['whole', 'cut', 'ghost'].map(function (v) { return '<button data-v="' + v + '" aria-pressed="' + (v === S.view) + '">' + H('view.' + v) + '</button>'; }).join('');
@@ -53,18 +57,21 @@
     // dialog
     $('dlgBody').innerHTML = '<p class="intro">' + H('simplifyIntro') + '</p><dl>' + T('simplifyList').map(function (it) { return '<dt>' + I18N.markup(it[0]) + '</dt><dd>' + I18N.markup(it[1]) + '</dd>'; }).join('') + '</dl>';
     lastPhase = -1; lastChain = ''; lastChips = '';
+    glideAll(true);
     updateButtons(); updateRateLabel(); updateCondCard(); updateInfo(); buildLabels(); updateVitals(); updateTiming();
   }
   function updateButtons() {
-    $('btnPlay').textContent = S.playing && !S.stepping ? I18N.plain('pause') : I18N.plain('play');
-    $('btnStep').textContent = I18N.plain('step') + (I18N.rtl() ? ' ←' : ' →');
-    $('btnSound').textContent = '♪ ' + I18N.plain(S.sound ? 'soundOn' : 'soundOff');
+    var playing = S.playing && !S.stepping;
+    $('btnPlay').innerHTML = icon(playing ? 'pause' : 'play') + '<span>' + I18N.plain(playing ? 'pause' : 'play') + '</span>';
+    $('btnPlay').setAttribute('aria-label', I18N.plain(playing ? 'pause' : 'play'));
+    $('btnStep').innerHTML = icon('step', 'flip') + '<span>' + I18N.plain('step') + '</span>';
+    $('btnSound').innerHTML = icon(S.sound ? 'sound' : 'mute') + '<span>' + I18N.plain(S.sound ? 'soundOn' : 'soundOff') + '</span>';
     $('btnSound').setAttribute('aria-pressed', S.sound);
   }
   function updateRateLabel() {
     $('rateLabel').innerHTML = H('rate.' + S.cond);
     $('rateOut').innerHTML = S.hr + ' <small>' + H('bpm') + '</small>';
-    $('rate').value = S.hr;
+    $('rate').value = S.hr; fillRange($('rate'));
   }
   function updateCondCard() {
     var el = $('condCard');
@@ -156,7 +163,7 @@
       lastChips = chips;
       var names = T('valveNames');
       $('valveChips').innerHTML = ['mv', 'tv', 'av', 'pv'].map(function (k) {
-        return '<span class="chip' + (v[k].open ? ' open' : '') + '">' + I18N.markup(names[k]) + ' · ' + I18N.plain(v[k].open ? 'open' : 'closed') + '</span>';
+        return '<span class="chip' + (v[k].open ? ' open' : '') + '"><i></i>' + I18N.markup(names[k]) + ' <b>' + I18N.plain(v[k].open ? 'open' : 'closed') + '</b></span>';
       }).join('');
     }
     if (ph === lastPhase) return;
@@ -242,6 +249,62 @@
       '<span class="cap">' + I18N.markup(Tm.note) + ' <span dir="ltr">│</span> ' + I18N.markup(Tm.versus) + '</span>';
   }
 
+  /* ---------- interface helpers (look only) ---------- */
+  function icon(name, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>'; }
+  function splitItems(el) {
+    if (!el) return;
+    var parts = el.innerHTML.split(' · ');
+    if (parts.length > 1) el.innerHTML = parts.map(function (x) { return '<span>' + x + '</span>'; }).join('');
+  }
+  function fillRange(el) { el.style.setProperty('--p', ((el.value - el.min) / (el.max - el.min) * 100).toFixed(1) + '%'); }
+  // a pill that glides under the selected button of a group
+  function glide(host, instant) {
+    if (!host) return;
+    var g = host.querySelector('.glide');
+    if (!g) { g = document.createElement('span'); g.className = 'glide'; g.setAttribute('aria-hidden', 'true'); host.insertBefore(g, host.firstChild); instant = true; }
+    var b = host.querySelector('button[aria-pressed="true"]');
+    if (!b || !b.offsetWidth) { g.style.opacity = 0; return; }
+    if (instant) host.classList.remove('glide-ready');
+    g.style.opacity = 1; g.style.left = b.offsetLeft + 'px'; g.style.top = b.offsetTop + 'px';
+    g.style.width = b.offsetWidth + 'px'; g.style.height = b.offsetHeight + 'px';
+    if (instant) requestAnimationFrame(function () { requestAnimationFrame(function () { host.classList.add('glide-ready'); }); });
+  }
+  function glideAll(instant) { ['conds', 'viewSeg', 'speedSeg'].forEach(function (id) { glide($(id), instant); }); }
+  function theme() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateTheme() {
+    var dark = theme() === 'dark', lab = I18N.plain(dark ? 'themeLight' : 'themeDark');
+    $('btnTheme').innerHTML = icon(dark ? 'sun' : 'moon');
+    $('btnTheme').setAttribute('aria-label', lab); $('btnTheme').title = lab;
+  }
+  function toggleTheme() {
+    var t = theme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t); store('hb-theme', t); updateTheme();
+  }
+  function copyPrompt() {
+    var text = $('promptText').textContent, done = function () {
+      $('btnCopy').classList.add('done');
+      $('btnCopy').querySelector('use').setAttribute('href', '#i-check');
+      $('copyText').textContent = I18N.plain('copied');
+      clearTimeout(copyPrompt.t);
+      copyPrompt.t = setTimeout(function () {
+        $('btnCopy').classList.remove('done');
+        $('btnCopy').querySelector('use').setAttribute('href', '#i-copy');
+        $('copyText').textContent = I18N.plain('copy');
+      }, 1800);
+    };
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents($('promptText'));
+      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      try { if (document.execCommand('copy')) done(); } catch (e) { /* the text stays selected for a manual copy */ }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
+
   /* ---------- controls ---------- */
   function setCondition(c) {
     if (CONDS.indexOf(c) < 0) return;
@@ -252,6 +315,7 @@
     blood.reset(sim);
     var b = $('conds').querySelectorAll('button');
     for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', b[i].dataset.c === c);
+    glide($('conds'));
     lastPhase = -1; lastChain = ''; lastChips = '';
     updateRateLabel(); updateCondCard(); updateVitals(); updateTiming();
   }
@@ -259,6 +323,7 @@
     S.view = v; $('cutWrap').hidden = v !== 'cut';
     var b = $('viewSeg').querySelectorAll('button');
     for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', b[i].dataset.v === v);
+    glide($('viewSeg'));
   }
   function toggleLayer(k) {
     S[k] = !S[k];
@@ -270,11 +335,12 @@
   function setSpeed(v) {
     S.speed = v; var b = $('speedSeg').querySelectorAll('button');
     for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', +b[i].dataset.s === v);
+    glide($('speedSeg'));
   }
   function togglePlay() { if (S.stepping) { S.stepping = false; S.playing = false; } else S.playing = !S.playing; updateButtons(); }
   function stepPhase() { S.stepping = true; S.playing = true; S.stepFrom = sim.phase; updateButtons(); }
   function toggleSound() { if (S.sound) { audio.disable(); S.sound = false; } else S.sound = audio.enable(); updateButtons(); }
-  function cutFromSlider() { R.view.cutZ = 3.4 - (+$('cutZ').value / 100) * 6.3; }
+  function cutFromSlider() { fillRange($('cutZ')); R.view.cutZ = 3.4 - (+$('cutZ').value / 100) * 6.3; }
 
   function bindUI() {
     $('conds').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setCondition(b.dataset.c); });
@@ -286,13 +352,21 @@
     $('btnSound').addEventListener('click', toggleSound);
     $('btnLang').addEventListener('click', function () { S.lang = S.lang === 'ar' ? 'en' : 'ar'; store('hb-lang', S.lang); applyLang(); setView(S.view); });
     $('btnSimplify').addEventListener('click', function () { $('dlg').showModal(); });
+    $('btnPrompt').addEventListener('click', function () { $('dlgPrompt').showModal(); });
+    $('promptClose').addEventListener('click', function () { $('dlgPrompt').close(); });
+    $('dlgPrompt').addEventListener('click', function (e) { if (e.target === $('dlgPrompt')) $('dlgPrompt').close(); });
+    $('btnCopy').addEventListener('click', copyPrompt);
+    $('btnTheme').addEventListener('click', toggleTheme);
+    if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme); } catch (e) { /* old Safari */ } }
+    window.addEventListener('resize', function () { glideAll(true); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { glideAll(true); });
     $('dlgClose').addEventListener('click', function () { $('dlg').close(); });
     $('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) $('dlg').close(); });
     $('infoClose').addEventListener('click', function () { select(0); });
     $('rate').addEventListener('input', function () { S.hr = +this.value; sim.setHR(S.hr); updateRateLabel(); });
     $('cutZ').addEventListener('input', cutFromSlider);
     document.addEventListener('keydown', function (e) {
-      if (e.target.tagName === 'INPUT' || $('dlg').open) return;
+      if (e.target.tagName === 'INPUT' || $('dlg').open || $('dlgPrompt').open) return;
       if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
       else if (e.code === 'ArrowRight') { e.preventDefault(); stepPhase(); }
       else if (e.key >= '1' && e.key <= '4') setCondition(CONDS[+e.key - 1]);
@@ -371,7 +445,7 @@
     var c = T('chart'), L = {};
     for (var k in c) L[k] = I18N.strip(c[k], true);
     L.s1 = 'S1'; L.s2 = 'S2'; L.rtl = I18N.rtl(); L.stenosis = S.cond === 'as';
-    L.font = I18N.rtl() ? 'system-ui, -apple-system, "Geeza Pro", sans-serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    L.font = I18N.rtl() ? '"Alyamama", system-ui, -apple-system, "Geeza Pro", sans-serif' : '"Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     csKey = key; csCache = L; return L;
   }
 

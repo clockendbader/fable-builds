@@ -125,6 +125,12 @@
       ['Blood', 'Each dot stands for a fixed volume of blood carried by the model\'s flows along guide paths. Real flow swirls. Blue for oxygen-poor blood is a drawing convention.']
     ],
     keys: 'Keys: Space play/pause · → next phase · 1–4 conditions',
+    viewLabel: 'View', showLabel: 'Show', simplifiesShort: 'What it simplifies',
+    prompt: 'Prompt', promptTitle: 'The prompt behind this page',
+    promptIntro: 'This whole page was built with Fable from this one prompt. Copy it and try it yourself.',
+    copy: 'Copy prompt', copied: 'Copied',
+    themeLight: 'Switch to light', themeDark: 'Switch to dark',
+    builtBy: 'Built live by Bader', orismLink: 'Learn to build with AI at Orism',
     mouseOverChart: 'P wave: atria activate (depolarise) · QRS: ventricles activate · T wave: ventricles reset (repolarise)',
     s1: 'S1', s2: 'S2'
   };
@@ -248,6 +254,12 @@
       ['الدم', 'كل نقطة تمثّل حجمًا ثابتًا من الدم يحمله جريان النموذج على مسارات إرشادية. الجريان الحقيقي فيه دوّامات. واللون الأزرق للدم قليل الأكسجين اصطلاح في الرسم.']
     ],
     keys: 'المفاتيح: المسافة تشغيل/إيقاف · → المرحلة التالية · 1–4 الحالات',
+    viewLabel: 'العرض', showLabel: 'إظهار', simplifiesShort: 'ما الذي يبسّطه',
+    prompt: 'البرومبت', promptTitle: 'البرومبت الذي بنى هذه الصفحة',
+    promptIntro: 'بُنيت هذه الصفحة كلها باستخدام Fable من هذا البرومبت وحده. انسخه وجرّبه بنفسك.',
+    copy: 'انسخ البرومبت', copied: 'تم النسخ',
+    themeLight: 'الوضع الفاتح', themeDark: 'الوضع الداكن',
+    builtBy: 'بناها بدر في بث مباشر', orismLink: 'تعلّم البناء بالذكاء الاصطناعي مع اورسم',
     mouseOverChart: 'موجة P: تفعيل الأذينين (زوال الاستقطاب) · مركّب QRS: تفعيل البطينين · موجة T: عودة البطينين إلى حالة الراحة (عودة الاستقطاب)',
     s1: 'S1', s2: 'S2'
   };
